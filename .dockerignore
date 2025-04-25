@@ -1,6 +1,9 @@
 node_modules
-npm-debug.log
 Dockerfile
+dist
+*.log
+*.md
+.env.example
 .dockerignore
 .git
 .gitignore

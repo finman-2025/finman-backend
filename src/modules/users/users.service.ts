@@ -8,18 +8,21 @@ export class UsersService {
   async findOneByUsernameAndPassword(username: string, password: string) {
     return await this.prisma.user.findFirst({
       where: { username, password },
+      omit: { username: true, password: true },
     });
   }
 
   async findOneByUsername(username: string) {
     return await this.prisma.user.findFirst({
       where: { username },
+      omit: { username: true, password: true },
     });
   }
 
   async findOneById(id: number) {
     return await this.prisma.user.findFirst({
       where: { id },
+      omit: { username: true, password: true },
     });
   }
 

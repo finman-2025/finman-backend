@@ -5,10 +5,7 @@ export class UserDto {
   id: number;
 
   @ApiProperty()
-  username: string;
-
-  @ApiProperty()
-  password: string;
+  name: string;
 
   @ApiProperty()
   email: string;
