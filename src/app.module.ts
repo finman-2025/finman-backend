@@ -1,6 +1,8 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
 
 import config from './config/app.config';
 import { DatabaseModule } from './config/db.config';
@@ -14,10 +16,13 @@ import { CategoriesModule } from './modules/categories/categories.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SchedulerService } from './modules/scheduler/scheduler.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ load: [config], isGlobal: true }),
+    ScheduleModule.forRoot(),
+    HttpModule,
     DatabaseModule,
     UsersModule,
     CategoriesModule,
@@ -37,6 +42,7 @@ import { AppService } from './app.service';
       provide: APP_INTERCEPTOR,
       useClass: PostInterceptor,
     },
+    SchedulerService,
   ],
 })
 export class AppModule implements NestModule {

@@ -10,7 +10,7 @@ export default () => {
     env: process.env.NODE_ENV ?? 'development',
     host: process.env.HOST,
     port: parseInt(process.env.PORT),
-    payloadLimit: process.env.PAYLOAD_LIMIT,
+    payloadLimit: process.env.PAYLOAD_LIMIT ?? '50mb',
   };
 
   return { app };

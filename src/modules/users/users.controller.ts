@@ -6,7 +6,7 @@ import {
 } from '@nestjs/swagger';
 
 import { idSchema, ExceptionDto } from 'src/common/dto';
-import { loginSchema, UserDto } from './dto';
+import { UserDto } from './dto';
 
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';

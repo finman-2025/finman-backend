@@ -1,0 +1,14 @@
+name: Finman Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-to-render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
