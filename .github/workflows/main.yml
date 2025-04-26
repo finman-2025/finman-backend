@@ -75,7 +75,7 @@ jobs:
           git config user.email "phanthecuong2210@gmail.com"
           git pull
           BADGE_IMAGE="https://img.shields.io/badge/version-${{ steps.gitversion.outputs.semVer }}.svg"
-          RELEASE_LINK="https://github.com/CuongPhan03/${{ github.event.repository.name }}/releases/tag/v${{ steps.gitversion.outputs.semVer }}"
+          RELEASE_LINK="https://github.com/finman-2025/${{ github.event.repository.name }}/releases/tag/v${{ steps.gitversion.outputs.semVer }}"
           FIRST_LINE="# Finman App [![Version](${BADGE_IMAGE})](${RELEASE_LINK})"
           sed -i "1s|.*|${FIRST_LINE}|" README.md
           git add .
