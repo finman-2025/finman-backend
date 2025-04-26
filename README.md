@@ -1,4 +1,4 @@
-
+# Finman App [![Version](https://img.shields.io/badge/version-0.0.1-10.svg)](https://github.com/CuongPhan03/finman-backend/releases/tag/v0.0.1-10)
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
