@@ -13,18 +13,19 @@ import {
 import { ExpensesService } from './expenses.service';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { collectionKey, messages, responseMessage, summaries } from 'src/common/text';
-import { ICreateExpense, IReturnExpense } from './interface';
+import { ICreateExpense, IReturnExpense, IUpdateExppense } from './interface';
 import { ExceptionDto, idSchema } from 'src/common/dto';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
-import { CreateExpenseDto, createExpenseSchema, UpdateExpenseDto } from './dto';
-import { IUpdateCategory } from '../categories/interface';
+import { CreateExpenseDto, createExpenseSchema, UpdateExpenseDto, updateExpenseSchema } from './dto';
 import { UsersService } from '../users/users.service';
+import { CategoriesService } from '../categories/categories.service';
 
 @Controller('expenses')
 export class ExpensesController {
     constructor(
         private readonly expensesService: ExpensesService,
-        private readonly usersService: UsersService
+        private readonly usersService: UsersService,
+        private readonly categoriesService: CategoriesService
     ) {}
 
     @Get(':id')
@@ -73,10 +74,10 @@ export class ExpensesController {
         description: responseMessage.badRequest,
         type: ExceptionDto
     })
-    @ApiBody({ type: IUpdateCategory })
+    @ApiBody({ type: IUpdateExppense })
     async updateExpense(
         @Param('id', new ZodValidationPipe(idSchema)) id: number,
-        @Body(new ZodValidationPipe(createExpenseSchema)) body: UpdateExpenseDto
+        @Body(new ZodValidationPipe(updateExpenseSchema)) body: UpdateExpenseDto
     ): Promise<IReturnExpense> {
         const expense = await this.expensesService.updateOneById(id, body);
         if (!expense) {
@@ -117,7 +118,7 @@ export class ExpensesController {
         if (!user) {
             throw new NotFoundException(messages.notFound(collectionKey.user));
         }
-        return await this.expensesService.findManyByUserId(userId);
+        return await this.expensesService.findManyByCategoryId(userId);
     }
 
     @Delete()
@@ -127,14 +128,18 @@ export class ExpensesController {
         description: responseMessage.notFound,
         type: ExceptionDto
     })
+    @ApiBadRequestResponse({
+        description: responseMessage.badRequest,
+        type: ExceptionDto
+    })
     async deleteAllExpensesByUserId(
-        @Query('userId') userId: number
+        @Query('categoryId', new ZodValidationPipe(idSchema)) categoryId: number
     ): Promise<Boolean> {
-        const user = await this.usersService.findOneById(userId);
-        if (!user) {
-            throw new NotFoundException(messages.notFound(collectionKey.user));
+        const category = await this.categoriesService.findOneById(categoryId);
+        if (!category) {
+            throw new NotFoundException(messages.notFound(collectionKey.category));
         }
-        await this.expensesService.deleteAllUsersExpenses(userId);
+        await this.expensesService.deleteAllCategoryExpenses(categoryId);
         return true;
     }
 }

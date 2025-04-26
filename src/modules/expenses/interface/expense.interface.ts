@@ -12,9 +12,6 @@ export class IExpense {
 
     @ApiProperty()
     date: Date;
-    
-    @ApiProperty()
-    userId: number;
 
     @ApiProperty()
     categoryId: number;

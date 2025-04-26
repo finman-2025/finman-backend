@@ -14,7 +14,6 @@ export class ExpensesService {
                 value: data.value,
                 description: data.description,
                 date: data.date,
-                userId: data.userId,
                 categoryId: data.categoryId
             },
             omit: { id: true, createdAt: true, updatedAt: true }
@@ -28,9 +27,9 @@ export class ExpensesService {
         })
     }
 
-    async findManyByUserId(userId: number) {
+    async findManyByCategoryId(categoryId: number) {
         return await this.prisma.expense.findMany({
-            where: { userId },
+            where: { categoryId },
             orderBy: { date: 'desc' },
             omit: { id: true, createdAt: true, updatedAt: true }
         });
@@ -53,7 +52,7 @@ export class ExpensesService {
         return await this.prisma.expense.delete({ where: { id } });
     }
 
-    async deleteAllUsersExpenses(userId: number) {
-        return await this.prisma.expense.deleteMany({ where: { userId } });
+    async deleteAllCategoryExpenses(categoryId: number) {
+        return await this.prisma.expense.deleteMany({ where: { categoryId } });
     }
 }

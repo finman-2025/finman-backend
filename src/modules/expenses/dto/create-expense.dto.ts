@@ -18,10 +18,6 @@ export const createExpenseSchema = z.object({
         .string({ message: messages.missing(fieldKey.date) })
         .nonempty(messages.missing(fieldKey.date))
         .datetime(messages.invalid(fieldKey.date)),
-    userId: z
-        .number({ message: messages.missing(fieldKey.userId) })
-        .int(messages.invalid(fieldKey.userId))
-        .positive(messages.invalid(fieldKey.userId)),
     categoryId: z
         .number({ message: messages.missing(fieldKey.categoryId) })
         .int(messages.invalid(fieldKey.categoryId))

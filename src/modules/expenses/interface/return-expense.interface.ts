@@ -5,6 +5,5 @@ export class IReturnExpense extends PickType(IExpense, [
     "value",
     "description",
     "date",
-    "userId",
     "categoryId"
 ]) {}

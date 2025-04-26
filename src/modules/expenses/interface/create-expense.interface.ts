@@ -5,6 +5,5 @@ export class ICreateExpense extends PickType(IExpense, [
     "value",
     "description",
     "date",
-    "userId",
     "categoryId",
 ]) {}
