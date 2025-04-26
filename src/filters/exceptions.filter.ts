@@ -11,6 +11,7 @@ import { responseMessage } from 'src/common/text';
 @Catch()
 export class AppExceptionsFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost): void {
+    console.log(exception);
     const ctx = host.switchToHttp();
     const httpStatus =
       exception instanceof HttpException
