@@ -17,6 +17,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchedulerService } from './modules/scheduler/scheduler.service';
+import { ExpensesModule } from './modules/expenses/expenses.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SchedulerService } from './modules/scheduler/scheduler.service';
     DatabaseModule,
     UsersModule,
     CategoriesModule,
+    ExpensesModule
   ],
   controllers: [AppController],
   providers: [

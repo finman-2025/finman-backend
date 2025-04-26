@@ -1,6 +1,7 @@
 export const collectionKey = {
   user: 'Người dùng',
   category: 'Danh mục',
+  expense: 'Chi tiêu',
   tips: 'Gợi ý',
   token: 'Token',
 };
@@ -10,8 +11,14 @@ export const fieldKey = {
   password: 'Mật khẩu',
   id: 'Id',
   name: 'Tên',
+  email: 'Email',
   categoryName: 'Tên danh mục',
   limit: 'Hạn mức',
+  value: 'Giá trị',
+  description: 'Mô tả',
+  userId: 'Id người dùng',
+  categoryId: 'Id danh mục',
+  date: 'Ngày'
 };
 
 export const TokenType = {

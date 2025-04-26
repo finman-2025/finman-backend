@@ -83,7 +83,7 @@ export class CategoriesController {
   })
   @UsePipes(new ZodValidationPipe(createCategorySchema))
   async createCategory(@Body() body: CreateCategoryDto): Promise<ICategory> {
-    const category = await this.categoriesService.create(body, 1);
+    const category = await this.categoriesService.create(body, 2);
     if (!category) {
       throw new InternalServerErrorException(
         responseMessage.internalServerError,

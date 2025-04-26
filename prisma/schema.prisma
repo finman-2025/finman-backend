@@ -8,13 +8,17 @@ datasource db {
 }
 
 model User {
-  id          Int    @id @default(autoincrement())
-  username    String @unique
-  password    String
+  id Int @id @default(autoincrement())
+
+  username String @unique
+  password String
+
   name        String
   email       String
   phoneNumber String?
-  categories  Category[]
+
+  categories Category[]
+  Expense    Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -23,13 +27,16 @@ model User {
 }
 
 model Category {
-  id     Int    @id @default(autoincrement())
-  name   String
-  image  String?
-  limit  Int?
+  id Int @id @default(autoincrement())
 
-  user   User   @relation(fields: [userId], references: [id])
+  name  String
+  image String?
+  limit Int?
+
+  user   User @relation(fields: [userId], references: [id])
   userId Int
+
+  Expense Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,3 +44,21 @@ model Category {
   @@map("category")
 }
 
+model Expense {
+  id Int @id @default(autoincrement())
+
+  value       Int
+  description String?
+  date        DateTime
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("expense")
+}

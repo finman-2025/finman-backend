@@ -19,6 +19,8 @@ export const messages = {
 export const summaries = {
   getOne: (collection: string) =>
     `Lấy thông tin một ${collection.toLocaleLowerCase()}`,
+  getMany: (collection: string) =>
+    `Lấy danh sách các ${collection.toLocaleLowerCase()}`,
   getList: (collection: string) =>
     `Lấy danh sách ${collection.toLocaleLowerCase()}`,
   create: (collection: string) =>
@@ -26,4 +28,6 @@ export const summaries = {
   update: (collection: string) =>
     `Cập nhật một ${collection.toLocaleLowerCase()}`,
   delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
+  deleteMany: (collection: string) =>
+    `Xóa nhiều ${collection.toLocaleLowerCase()}`,
 };
