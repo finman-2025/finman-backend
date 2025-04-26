@@ -19,40 +19,36 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 
-import { idSchema, ExceptionDto } from 'src/common/dto';
-import { CreateUserDto, createUserSchema, UpdateUserDto, updateUserSchema } from './dto';
-import { ICreateUser, IReturnUser, IUpdateUser } from './interface';
+import { 
+  idSchema, 
+  ExceptionDto
+} from 'src/common/dto';
+import { 
+  responseMessage,
+  messages,
+  summaries
+} from 'src/common/text/messages';
+import { collectionKey } from 'src/common/text/keywords';
+import { nameSchema } from 'src/common/dto/name.dto';
+
+import { 
+  CreateUserDto,
+  createUserSchema,
+  UpdateUserDto,
+  updateUserSchema
+} from './dto';
+import { 
+  ICreateUser,
+  IReturnUser,
+  IUpdateUser
+} from './interface';
 
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
-import { responseMessage, messages, summaries } from 'src/common/text/messages';
-import { collectionKey } from 'src/common/text/keywords';
-
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  // @Post()
-  // @ApiOperation({
-  //   summary: 'test',
-  // })
-  // @ApiOkResponse({ type: UserDto })
-  // @ApiBadRequestResponse({
-  //   description: 'Bad request',
-  //   type: ExceptionDto,
-  // })
-  // @UsePipes(new ZodValidationPipe(loginSchema))
-  // async getUserByUsernameAndPassword(@Body() body: any): Promise<UserDto> {
-  //   const user = await this.usersService.findOneByUsernameAndPassword(
-  //     body.username,
-  //     body.password,
-  //   );
-  //   if (!user) {
-  //     throw new UnauthorizedException(responseMessage.wrongUsernameOrPassword);
-  //   }
-  //   return user;
-  // }
 
   @Get(':id')
   @ApiOperation({
@@ -78,7 +74,7 @@ export class UsersController {
     summary: summaries.getMany(collectionKey.user),
   })
   async getManyUsersBySearchString(
-    @Query('searchString') searchString: string
+    @Query('searchString', new ZodValidationPipe(nameSchema)) searchString: string
   ): Promise<IReturnUser[]> {
     const users = await this.usersService.findManyUsersBySearchString(searchString);
     return users;
