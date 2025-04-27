@@ -33,7 +33,7 @@ import {
     ICreateExpense,
     IReturnExpense,
     IUpdateExppense
-} from './interface';
+} from './interfaces';
 import { 
     CreateExpenseDto,
     createExpenseSchema,

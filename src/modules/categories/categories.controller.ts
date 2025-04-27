@@ -28,7 +28,7 @@ import {
   UpdateCategoryDto,
   updateCategorySchema,
 } from './dto';
-import { ICategory, ICreateCategory, IUpdateCategory } from './interface';
+import { ICategory, ICreateCategory, IUpdateCategory } from './interfaces';
 
 import { CategoriesService } from './categories.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';

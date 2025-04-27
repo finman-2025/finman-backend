@@ -18,6 +18,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchedulerService } from './modules/scheduler/scheduler.service';
 import { ExpensesModule } from './modules/expenses/expenses.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
     DatabaseModule,
     UsersModule,
     CategoriesModule,
-    ExpensesModule
+    ExpensesModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [

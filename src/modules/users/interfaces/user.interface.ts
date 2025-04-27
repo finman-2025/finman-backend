@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ICategory } from 'src/modules/categories/interface';
+import { ICategory } from 'src/modules/categories/interfaces';
 
 export class IUser {
   @ApiProperty()
