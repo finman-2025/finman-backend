@@ -13,9 +13,11 @@ model User {
   username String @unique
   password String
 
+  refreshToken String?
+
   name        String
   email       String
-  phoneNumber String? 
+  phoneNumber String?
 
   categories Category[]
 

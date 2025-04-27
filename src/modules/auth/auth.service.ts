@@ -3,7 +3,7 @@ import { BadRequestException, Injectable, NotFoundException, ServiceUnavailableE
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/config/db.config';
 import { UsersService } from '../users/users.service';
-import { LoginDto, RegisterDto } from './dto';
+import { RegisterDto, TokensDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -23,19 +23,17 @@ export class AuthService {
 
     async validateUser(username: string, password: string) {
         const user = await this.usersService.findOneByUsername(username);
-        if (!user) throw new NotFoundException('Invalid credentials');
+        if (!user) throw new NotFoundException('No user found');
 
         const valid = await this.verifyPassword(user.password, password);
         if (!valid) throw new BadRequestException('Invalid credentials');
 
-        return this.usersService.getBasicUserInfo(user);
+        return user;
     }
 
     async validateAccessTokenPayload(payload: any) {
         const user = await this.usersService.findOneById(payload.sub);
-        if (!user) throw new UnauthorizedException('Invalid credentials');
-
-        return this.usersService.getBasicUserInfo(user);
+        return { id: user.id, username: user.username };
     }
 
     async register(dto: RegisterDto) {
@@ -58,8 +56,41 @@ export class AuthService {
 
     async login(user: any) {
         const payload = { username: user.username, sub: user.id };
-        return {
-            access_token: this.jwtService.signAsync(payload),
-        };
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+        // Optionally, store the refresh token in the database for the user
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken }
+        });
+
+        return new TokensDto(accessToken, refreshToken);
+    }
+
+    async refreshToken(username: string, refreshToken: string) {
+        // Find user and check stored refresh token
+        const user = await this.prisma.user.findUnique({ where: { username: username } });
+        if (!user || user.refreshToken !== refreshToken) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+        // Verify refresh token
+        try {
+            const payload = this.jwtService.verify(refreshToken);
+            // Issue new access token
+            const newAccessToken = this.jwtService.sign({ username: user.username, sub: user.id }, { expiresIn: '15m' });
+            return new TokensDto(newAccessToken, refreshToken);
+        } catch (e) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
+
+    async logout(user: any) {
+        // Remove refresh token from database
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken: null }
+        });
+        return true;
     }
 }

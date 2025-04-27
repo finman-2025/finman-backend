@@ -7,7 +7,9 @@ import {
     Param,
     Patch,
     Post,
-    Query
+    Query,
+    Req,
+    UseGuards
 } from '@nestjs/common';
 import {
     ApiBadRequestResponse,
@@ -27,6 +29,7 @@ import {
     ExceptionDto,
     idSchema
 } from 'src/common/dto';
+import { Request } from 'express';
 
 import { ExpensesService } from './expenses.service';
 import { 
@@ -45,6 +48,7 @@ import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { UsersService } from '../users/users.service';
 import { CategoriesService } from '../categories/categories.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -54,6 +58,7 @@ export class ExpensesController {
         private readonly categoriesService: CategoriesService
     ) {}
 
+    @UseGuards(JwtAuthGuard)
     @Get(':id')
     @ApiOperation({ summary: summaries.getOne(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense})
@@ -71,6 +76,7 @@ export class ExpensesController {
         return expense;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post()
     @ApiOperation({ summary: summaries.create(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense})
@@ -89,6 +95,7 @@ export class ExpensesController {
         return expense;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':id')
     @ApiOperation({ summary: summaries.update(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense})
@@ -112,6 +119,7 @@ export class ExpensesController {
         return expense;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @ApiOperation({ summary: summaries.delete(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success })
@@ -130,6 +138,7 @@ export class ExpensesController {
         return true;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get()
     @ApiOperation({ summary: summaries.getMany(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success, type: [IReturnExpense]})
@@ -137,16 +146,15 @@ export class ExpensesController {
         description: responseMessage.notFound,
         type: ExceptionDto
     })
-    async getExpensesByUserId(
-        @Query('userId') userId: number
-    ): Promise<IReturnExpense[]> {
-        const user = await this.usersService.findOneById(userId);
+    async getExpensesByUserId(@Req() req: Request): Promise<IReturnExpense[]> {
+        const user = await this.usersService.findOneById(req.user['id']);
         if (!user) {
             throw new NotFoundException(messages.notFound(collectionKey.user));
         }
-        return await this.expensesService.findManyByCategoryId(userId);
+        return await this.expensesService.findManyByCategoryId(req.user['id']);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete()
     @ApiOperation({ summary: summaries.deleteMany(collectionKey.expense) })
     @ApiOkResponse({ description: responseMessage.success })

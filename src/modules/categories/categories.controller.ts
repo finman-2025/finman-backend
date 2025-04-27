@@ -9,6 +9,8 @@ import {
   InternalServerErrorException,
   Patch,
   Delete,
+  UseGuards,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -17,6 +19,7 @@ import {
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { 
   idSchema,
@@ -39,11 +42,13 @@ import {
   summaries,
   collectionKey,
 } from 'src/common/text';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
@@ -51,14 +56,15 @@ export class CategoriesController {
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
-  async getCategoryByUser(): Promise<ICategory[]> {
-    const categories = await this.categoriesService.findAll(1);
+  async getCategoryByUser(@Res() req: Request): Promise<ICategory[]> {
+    const categories = await this.categoriesService.findAll(req.user['id']);
     if (!categories) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
     return categories;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
@@ -76,6 +82,7 @@ export class CategoriesController {
     return category;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
   @ApiBody({ type: ICreateCategory })
@@ -95,6 +102,7 @@ export class CategoriesController {
     return category;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiBody({ type: IUpdateCategory })
@@ -118,6 +126,7 @@ export class CategoriesController {
     return category;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
