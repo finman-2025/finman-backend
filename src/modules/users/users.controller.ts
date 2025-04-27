@@ -41,7 +41,7 @@ import {
   ICreateUser,
   IReturnUser,
   IUpdateUser
-} from './interface';
+} from './interfaces';
 
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';

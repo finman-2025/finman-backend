@@ -6,6 +6,7 @@ export function useSwagger(app: INestApplication) {
     const documentBuilder = new DocumentBuilder()
       .setTitle('Finman')
       .setVersion('0.0.1')
+      .addBearerAuth()
       .build();
 
     const document = SwaggerModule.createDocument(app, documentBuilder);

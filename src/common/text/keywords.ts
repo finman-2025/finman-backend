@@ -1,3 +1,5 @@
+import { ref } from "process";
+
 export const collectionKey = {
   user: 'Người dùng',
   category: 'Danh mục',
@@ -9,6 +11,7 @@ export const collectionKey = {
 export const fieldKey = {
   username: 'Tên đăng nhập',
   password: 'Mật khẩu',
+  refreshToken: 'Refresh token',
   id: 'Id',
   name: 'Tên',
   email: 'Email',
