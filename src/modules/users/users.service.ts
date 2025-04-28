@@ -7,23 +7,20 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findOneByUsernameAndPassword(username: string, password: string) {
-    return await this.prisma.user.findFirst({
-      where: { username, password },
-      omit: { username: true, password: true },
+    return await this.prisma.user.findUnique({
+      where: { username, password }
     });
   }
 
   async findOneByUsername(username: string) {
-    return await this.prisma.user.findFirst({
-      where: { username },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
+    return await this.prisma.user.findUnique({
+      where: { username }
     });
   }
 
   async findOneById(id: number) {
-    return await this.prisma.user.findFirst({
-      where: { id },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
+    return await this.prisma.user.findUnique({
+      where: { id }
     });
   }
 
@@ -33,8 +30,7 @@ export class UsersService {
         username: {
           contains: searchString
         }
-      },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
+      }
     });
   }
 
@@ -56,14 +52,22 @@ export class UsersService {
         email: data.email,
         name: data.name,
         phoneNumber: data.phoneNumber
-      },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
+      }
     })
   }
 
   async deleteOneById(id: number) {
     return await this.prisma.user.delete({
-      where: { id },
+      where: { id }
     });
+  }
+
+  getBasicUserInfo(user: any) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phoneNumber: user.phoneNumber
+    }
   }
 }
