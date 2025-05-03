@@ -11,9 +11,11 @@ import {
   Delete,
   UseGuards,
   Res,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -21,10 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { Request } from 'express';
 
-import { 
-  idSchema,
-  ExceptionDto
-} from 'src/common/dto';
+import { idSchema, ExceptionDto } from 'src/common/dto';
 import {
   CreateCategoryDto,
   createCategorySchema,
@@ -42,21 +41,20 @@ import {
   summaries,
   collectionKey,
 } from 'src/common/text';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
+  @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
-  async getCategoryByUser(@Res() req: Request): Promise<ICategory[]> {
+  async getCategoryByUser(@Req() req: Request): Promise<ICategory[]> {
     const categories = await this.categoriesService.findAll(req.user['id']);
     if (!categories) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
@@ -64,9 +62,9 @@ export class CategoriesController {
     return categories;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
+  @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,
@@ -82,9 +80,9 @@ export class CategoriesController {
     return category;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
+  @ApiBearerAuth()
   @ApiBody({ type: ICreateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
@@ -102,9 +100,9 @@ export class CategoriesController {
     return category;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
+  @ApiBearerAuth()
   @ApiBody({ type: IUpdateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
@@ -126,9 +124,9 @@ export class CategoriesController {
     return category;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
+  @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,

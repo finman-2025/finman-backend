@@ -8,55 +8,55 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id            Int @id @default(autoincrement())
 
-  username String @unique
-  password String
+  username      String @unique
+  password      String
 
-  refreshToken String?
+  refreshToken  String?
 
-  name        String
-  email       String
-  phoneNumber String?
+  name          String
+  email         String
+  phoneNumber   String?
 
-  categories Category[]
+  categories    Category[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("user")
 }
 
 model Category {
-  id Int @id @default(autoincrement())
+  id            Int @id @default(autoincrement())
 
-  name  String
-  image String?
-  limit Int?
+  name          String
+  image         String?
+  limit         Int?
 
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  user          User @relation(fields: [userId], references: [id])
+  userId        Int
 
-  Expense Expense[]
+  Expense       Expense[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("category")
 }
 
 model Expense {
-  id Int @id @default(autoincrement())
+  id            Int @id @default(autoincrement())
 
-  value       Int
-  description String?
-  date        DateTime
+  value         Int
+  description   String?
+  date          DateTime
 
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId Int
+  category      Category @relation(fields: [categoryId], references: [id])
+  categoryId    Int
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("expense")
 }
