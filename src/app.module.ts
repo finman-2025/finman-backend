@@ -45,10 +45,10 @@ import { JwtStrategy } from './guards/strategies/jwt.strategy';
       provide: APP_FILTER,
       useClass: AppExceptionsFilter,
     },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: TransformInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: TransformInterceptor,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: PostInterceptor,

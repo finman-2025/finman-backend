@@ -65,10 +65,8 @@ export class AuthController {
   @ApiOkResponse({ description: responseMessage.success, type: TokensDto })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   @ApiBearerAuth()
-  @ApiBody({ type: IRefresh })
-  @UsePipes(new ZodValidationPipe(refreshSchema))
-  async refresh(@Body() body: RefreshDto): Promise<TokensDto> {
-    return this.authService.refreshToken(body.username, body.refreshToken);
+  async refresh(@Req() req: Request): Promise<TokensDto> {
+    return this.authService.refreshToken(req.user);
   }
 
   @Get('profile')
