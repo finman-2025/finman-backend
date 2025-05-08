@@ -2,14 +2,15 @@ import * as argon2 from 'argon2';
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
   ServiceUnavailableException,
-  UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+
+import { RegisterDto, TokensDto } from './dto';
 import { PrismaService } from 'src/config/db.config';
 import { UsersService } from '../users/users.service';
-import { RegisterDto, TokensDto } from './dto';
+
 import { responseMessage } from 'src/common/text';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class AuthService {
     private prisma: PrismaService,
     private usersService: UsersService,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -42,7 +44,25 @@ export class AuthService {
 
   async validateAccessTokenPayload(payload: any) {
     const user = await this.usersService.findOneById(payload.sub);
-    return { id: user.id, username: user.username };
+    return {
+      id: user.id,
+      username: user.username,
+      refreshToken: user.refreshToken,
+    };
+  }
+
+  async getTokens(id: number, username: string) {
+    const payload = { sub: id, username };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
+      }),
+      this.jwtService.signAsync(payload, {
+        expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES'),
+      }),
+    ]);
+
+    return new TokensDto(accessToken, refreshToken);
   }
 
   async register(dto: RegisterDto) {
@@ -65,16 +85,14 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.username, sub: user.id };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const tokens = await this.getTokens(user.id, user.username);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken },
+      data: { refreshToken: tokens.refreshToken },
     });
 
-    return new TokensDto(accessToken, refreshToken);
+    return tokens;
   }
 
   async refreshToken(username: string, refreshToken: string) {
