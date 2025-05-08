@@ -58,6 +58,7 @@ export class AuthService {
         name: dto.name,
       },
     });
+
     if (!user) throw new ServiceUnavailableException('Can not create new user');
 
     return true;
@@ -68,7 +69,6 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    // Optionally, store the refresh token in the database for the user
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshToken },
@@ -78,33 +78,33 @@ export class AuthService {
   }
 
   async refreshToken(username: string, refreshToken: string) {
-    // Find user and check stored refresh token
     const user = await this.prisma.user.findUnique({
       where: { username: username },
     });
     if (!user || user.refreshToken !== refreshToken) {
       throw new UnauthorizedException('Invalid refresh token');
     }
-    // Verify refresh token
+
     try {
       const payload = this.jwtService.verify(refreshToken);
-      // Issue new access token
+
       const newAccessToken = this.jwtService.sign(
         { username: user.username, sub: user.id },
         { expiresIn: '15m' },
       );
+
       return new TokensDto(newAccessToken, refreshToken);
     } catch (e) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new ServiceUnavailableException('Can not refresh token');
     }
   }
 
   async logout(user: any) {
-    // Remove refresh token from database
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshToken: null },
     });
+    
     return true;
   }
 }

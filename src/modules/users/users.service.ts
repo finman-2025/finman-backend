@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/config/db.config';
 import { CreateUserDto, UpdateUserDto } from './dto';
+import { IReturnUser, IUser } from './interfaces';
 
 @Injectable()
 export class UsersService {
@@ -62,12 +63,12 @@ export class UsersService {
     });
   }
 
-  getBasicUserInfo(user: any) {
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phoneNumber: user.phoneNumber
-    }
+  getBasicUserInfo(user: IUser): IReturnUser {
+    const {
+      password,
+      username,
+      ... rest
+    } = user;
+    return rest;
   }
 }

@@ -5,5 +5,9 @@ export class IReturnUser extends PickType(IUser, [
     'id',
     'name',
     'email',
-    'phoneNumber'
+    'phoneNumber',
+    'sex',
+    'dateOfBirth',
+    'address',
+    'avatar',
 ]) {}

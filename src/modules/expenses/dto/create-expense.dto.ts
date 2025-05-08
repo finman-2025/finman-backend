@@ -4,6 +4,11 @@ import { messages, fieldKey } from 'src/common/text';
 import { nameRegex } from 'src/common/utils';
 
 export const createExpenseSchema = z.object({
+    userId: z
+        .number({ message: messages.missing(fieldKey.userId) })
+        .int(messages.invalid(fieldKey.userId))
+        .positive(messages.invalid(fieldKey.userId))
+        .optional(),
     value: z
         .number({ message: messages.missing(fieldKey.value) })
         .int(messages.invalid(fieldKey.value))
