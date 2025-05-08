@@ -30,4 +30,9 @@ export const summaries = {
   delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
   deleteMany: (collection: string) =>
     `Xóa nhiều ${collection.toLocaleLowerCase()}`,
+  login: () => `Đăng nhập`,
+  register: () => `Đăng ký`,
+  refresh: () => `Làm mới token`,
+  logout: () => `Đăng xuất`,
+  profile: () => `Thông tin tài khoản`,
 };

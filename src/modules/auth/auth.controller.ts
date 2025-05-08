@@ -25,9 +25,8 @@ import { UsersService } from '../users/users.service';
 
 import { CreateUserDto, createUserSchema } from '../users/dto';
 import { loginSchema, TokensDto } from './dto';
-import { RefreshDto, refreshSchema } from './dto/refresh.dto';
 import { ICreateUser, IReturnUser } from '../users/interfaces';
-import { ILogin, IRefresh } from './interfaces';
+import { ILogin } from './interfaces';
 
 import { collectionKey, responseMessage, summaries } from 'src/common/text';
 
@@ -46,13 +45,14 @@ export class AuthController {
   @ApiBody({ type: ICreateUser })
   async register(
     @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserDto,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     return this.authService.register(body);
   }
 
   @Post('login')
   @SkipJwtAuth()
   @UseGuards(LocalAuthGuard)
+  @ApiOperation({ summary: summaries.login() })
   @ApiOkResponse({ description: responseMessage.success, type: TokensDto })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   @ApiBody({ type: ILogin })
@@ -62,33 +62,32 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.refresh() })
   @ApiOkResponse({ description: responseMessage.success, type: TokensDto })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
-  @ApiBody({ type: IRefresh })
-  @UsePipes(new ZodValidationPipe(refreshSchema))
-  async refresh(@Body() body: RefreshDto): Promise<TokensDto> {
-    return this.authService.refreshToken(body.username, body.refreshToken);
+  async refresh(@Req() req: Request): Promise<TokensDto> {
+    return this.authService.refreshToken(req.user);
   }
 
   @Get('profile')
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.profile() })
   @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
   async profile(@Req() req: Request): Promise<IReturnUser> {
-    const user = this.userService.findOneById(req.user['id']);
+    const user = await this.userService.findOneById(req.user['id']);
     if (!user) throw new BadRequestException('User not found');
     return this.userService.getBasicUserInfo(user);
   }
 
   @Post('logout')
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.logout() })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
-  async logout(@Req() req: Request): Promise<{ success: boolean }> {
+  async logout(@Req() req: Request): Promise<boolean> {
     await this.authService.logout(req.user);
-    return { success: true };
+    return true;
   }
 }

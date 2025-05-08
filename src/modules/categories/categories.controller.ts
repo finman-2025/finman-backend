@@ -9,8 +9,6 @@ import {
   InternalServerErrorException,
   Patch,
   Delete,
-  UseGuards,
-  Res,
   Req,
 } from '@nestjs/common';
 import {
@@ -47,8 +45,8 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  @ApiOperation({ summary: summaries.getList(collectionKey.category) })
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getList(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
@@ -63,8 +61,8 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,
@@ -81,17 +79,20 @@ export class CategoriesController {
   }
 
   @Post()
-  @ApiOperation({ summary: summaries.create(collectionKey.category) })
   @ApiBearerAuth()
-  @ApiBody({ type: ICreateCategory })
+  @ApiOperation({ summary: summaries.create(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
+  @ApiBody({ type: ICreateCategory })
   @UsePipes(new ZodValidationPipe(createCategorySchema))
-  async createCategory(@Body() body: CreateCategoryDto): Promise<ICategory> {
-    const category = await this.categoriesService.create(body, 2);
+  async createCategory(
+    @Req() req: Request,
+    @Body() body: CreateCategoryDto,
+  ): Promise<ICategory> {
+    const category = await this.categoriesService.create(body, req.user['id']);
     if (!category) {
       throw new InternalServerErrorException(
         responseMessage.internalServerError,
@@ -101,8 +102,8 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiBody({ type: IUpdateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
@@ -125,8 +126,8 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,
@@ -134,7 +135,7 @@ export class CategoriesController {
   })
   async deleteCategory(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     const category = await this.categoriesService.findOneById(id);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));
