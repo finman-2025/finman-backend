@@ -9,8 +9,6 @@ import {
   InternalServerErrorException,
   Patch,
   Delete,
-  UseGuards,
-  Res,
   Req,
 } from '@nestjs/common';
 import {
@@ -90,8 +88,11 @@ export class CategoriesController {
     type: ExceptionDto,
   })
   @UsePipes(new ZodValidationPipe(createCategorySchema))
-  async createCategory(@Body() body: CreateCategoryDto): Promise<ICategory> {
-    const category = await this.categoriesService.create(body, 2);
+  async createCategory(
+    @Req() req: Request,
+    @Body() body: CreateCategoryDto,
+  ): Promise<ICategory> {
+    const category = await this.categoriesService.create(body, req.user['id']);
     if (!category) {
       throw new InternalServerErrorException(
         responseMessage.internalServerError,

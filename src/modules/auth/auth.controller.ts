@@ -62,9 +62,9 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: TokensDto })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
   async refresh(@Req() req: Request): Promise<TokensDto> {
     return this.authService.refreshToken(req.user);
   }
@@ -73,7 +73,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
   async profile(@Req() req: Request): Promise<IReturnUser> {
     const user = this.userService.findOneById(req.user['id']);
     if (!user) throw new BadRequestException('User not found');
@@ -84,7 +83,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  @ApiBearerAuth()
   async logout(@Req() req: Request): Promise<{ success: boolean }> {
     await this.authService.logout(req.user);
     return { success: true };
