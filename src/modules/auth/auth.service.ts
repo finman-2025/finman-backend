@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -78,6 +79,7 @@ export class AuthService {
         name: dto.name,
       },
     });
+
     if (!user) throw new ServiceUnavailableException('Can not create new user');
 
     return true;
@@ -86,7 +88,6 @@ export class AuthService {
   async login(user: any) {
     const tokens = await this.getTokens(user.id, user.username);
 
-    // Optionally, store the refresh token in the database for the user
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshToken: tokens.refreshToken },
@@ -96,20 +97,22 @@ export class AuthService {
   }
 
   async refreshToken(user: any) {
-    const newTokens = await this.getTokens(user.id, user.username);
+    const tokens = await this.getTokens(user.id, user.username);
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: newTokens.refreshToken },
+      data: { refreshToken: tokens.refreshToken },
     });
-    return newTokens;
+
+    return tokens;
   }
 
   async logout(user: any) {
-    // Remove refresh token from database
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshToken: null },
     });
+
     return true;
   }
 }

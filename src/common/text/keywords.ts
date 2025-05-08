@@ -9,19 +9,24 @@ export const collectionKey = {
 };
 
 export const fieldKey = {
+  id: 'Id',
   username: 'Tên đăng nhập',
   password: 'Mật khẩu',
   refreshToken: 'Refresh token',
-  id: 'Id',
   name: 'Tên',
   email: 'Email',
+  sex: 'Giới tính',
+  phoneNumber: 'Số điện thoại',
+  dateOfBirth: 'Ngày sinh',
+  address: 'Địa chỉ',
+  avatar: 'Avatar',
   categoryName: 'Tên danh mục',
   limit: 'Hạn mức',
   value: 'Giá trị',
   description: 'Mô tả',
   userId: 'Id người dùng',
   categoryId: 'Id danh mục',
-  date: 'Ngày'
+  date: 'Ngày',
 };
 
 export const TokenType = {

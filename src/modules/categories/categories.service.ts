@@ -23,7 +23,7 @@ export class CategoriesService {
 
   async create(data: CreateCategoryDto, userId: number) {
     const category = await this.prisma.category.findFirst({
-      where: { name: data.name, id: userId },
+      where: { name: data.name, userId },
     });
 
     if (category) {

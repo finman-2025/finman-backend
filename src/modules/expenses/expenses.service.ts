@@ -11,6 +11,7 @@ export class ExpensesService {
     async createOne(data: CreateExpenseDto) {
         return await this.prisma.expense.create({
             data: {
+                userId: data.userId,
                 value: data.value,
                 description: data.description,
                 date: data.date,

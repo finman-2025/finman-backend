@@ -24,6 +24,18 @@ export class IUser {
   phoneNumber: string;
 
   @ApiProperty()
+  sex: string;
+
+  @ApiProperty()
+  dateOfBirth: Date;
+
+  @ApiProperty()
+  address: string;
+
+  @ApiProperty()
+  avatar: string;
+
+  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
