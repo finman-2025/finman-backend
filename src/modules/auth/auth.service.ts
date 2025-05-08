@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
