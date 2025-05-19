@@ -14,6 +14,8 @@ export const messages = {
   missing: (field: string) => `Thiếu ${field.toLocaleLowerCase()}`,
   nameExists: (collection: string = '') =>
     `Tên ${collection ? collection.toLocaleLowerCase() + ' ' : ''}đã tồn tại`,
+  overThreshold: (threshold: string = '') =>
+    `Giá trị ${threshold} vượt ngưỡng`,
 };
 
 export const summaries = {
@@ -30,9 +32,12 @@ export const summaries = {
   delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
   deleteMany: (collection: string) =>
     `Xóa nhiều ${collection.toLocaleLowerCase()}`,
+
   login: () => `Đăng nhập`,
   register: () => `Đăng ký`,
   refresh: () => `Làm mới token`,
   logout: () => `Đăng xuất`,
   profile: () => `Thông tin tài khoản`,
+
+  uploadReceipt: () => `Tải ảnh biên lai lên`
 };
