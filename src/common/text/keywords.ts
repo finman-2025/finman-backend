@@ -27,6 +27,11 @@ export const fieldKey = {
   userId: 'Id người dùng',
   categoryId: 'Id danh mục',
   date: 'Ngày',
+  author: 'Tác giả',
+  authorImage: 'Ảnh tác giả',
+  content: 'Nội dung',
+  title: 'Tiêu đề',
+  type: 'Thể loại',
 };
 
 export const TokenType = {
