@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
 import * as compression from 'compression';
+import * as multer from 'multer';
 
 import { AppConfig } from './config/app.config';
 
@@ -29,6 +30,7 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: appConfig.payloadLimit }));
   app.use(json({ limit: appConfig.payloadLimit }));
   app.use(compression());
+  app.use(multer({ limits: { fileSize: 10 * 1024 * 1024 } }).any());
 
   useSwagger(app);
 
