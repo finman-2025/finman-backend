@@ -48,7 +48,6 @@ export class AuthService {
     return {
       id: user.id,
       username: user.username,
-      refreshToken: user.refreshToken,
     };
   }
 
@@ -86,44 +85,38 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user.id, user.username);
+    const tokens = await this.getTokens(user['id'], user['username']);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
-    });
+    const refreshTokenData = {
+      token: tokens.refreshToken,
+      userId: user['id'],
+      expiresAt: new Date(Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES')),
+    };
+
+    await this.prisma.refreshToken.create({ data: refreshTokenData });
 
     return tokens;
   }
 
-  async refreshToken(username: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { username: username },
+  async refreshToken(refreshToken: string) {
+    const tokenData = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
     });
-    if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    if (!tokenData || tokenData.expiresAt < new Date()) throw new Error('Invalid refresh token');
 
-    try {
-      const payload = this.jwtService.verify(refreshToken);
+    const payload = await this.jwtService.verifyAsync(refreshToken);
 
-      const newAccessToken = this.jwtService.sign(
-        { username: user.username, sub: user.id },
-        { expiresIn: '15m' },
-      );
+    const newAccessToken = await this.jwtService.signAsync(
+      { sub: payload.sub },
+      { expiresIn: '15m' },
+    );
 
-      return new TokensDto(newAccessToken, refreshToken);
-    } catch (e) {
-      throw new ServiceUnavailableException('Can not refresh token');
-    }
+    return new TokensDto(newAccessToken, refreshToken);
   }
 
-  async logout(user: any) {
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: null },
+  async logout(userId: number) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: userId },
     });
-    
-    return true;
   }
 }

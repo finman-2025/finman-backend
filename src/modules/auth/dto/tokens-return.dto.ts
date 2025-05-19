@@ -7,8 +7,8 @@ export class TokensDto {
   @ApiProperty()
   refreshToken: string;
 
-  constructor(acessToken: string, refreshToken: string) {
-    this.accessToken = acessToken;
+  constructor(accessToken: string, refreshToken: string) {
+    this.accessToken = accessToken;
     this.refreshToken = refreshToken;
   }
 }

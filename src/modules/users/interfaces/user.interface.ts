@@ -12,9 +12,6 @@ export class IUser {
   password: string;
 
   @ApiProperty()
-  refreshToken: string;
-
-  @ApiProperty()
   name: string;
 
   @ApiProperty()
