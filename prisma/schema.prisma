@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id Int @id @default(autoincrement())
 
@@ -18,7 +24,7 @@ model User {
   name        String
   email       String
   phoneNumber String?
-  sex         String?
+  sex         Gender?
   dateOfBirth DateTime?
   address     String?
   avatar      String?

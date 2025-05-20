@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 import {
@@ -25,7 +26,12 @@ import {
   responseMessage,
   summaries,
 } from 'src/common/text';
-import { ExceptionDto, idSchema } from 'src/common/dto';
+import {
+  ExceptionDto,
+  idSchema,
+  optionalDateSchema,
+  optionalIdSchema,
+} from 'src/common/dto';
 import { Request } from 'express';
 
 import { ExpensesService } from './expenses.service';
@@ -49,6 +55,38 @@ export class ExpensesController {
     private readonly usersService: UsersService,
     private readonly categoriesService: CategoriesService,
   ) {}
+
+  @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getMany(collectionKey.expense) })
+  @ApiQuery({ name: 'categoryId', required: false, type: Number })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [IReturnExpense],
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound,
+    type: ExceptionDto,
+  })
+  async getExpensesByUserId(
+    @Req() req: Request,
+    @Query('categoryId', new ZodValidationPipe(optionalIdSchema))
+    categoryId?: number,
+    @Query('date', new ZodValidationPipe(optionalDateSchema))
+    date?: Date,
+  ): Promise<IReturnExpense[]> {
+    return await this.expensesService.findMany(
+      req.user['id'],
+      categoryId,
+      date,
+    );
+  }
 
   @Get(':id')
   @ApiBearerAuth()
@@ -130,25 +168,6 @@ export class ExpensesController {
     }
     await this.expensesService.deleteOneById(id);
     return true;
-  }
-
-  @Get()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: summaries.getMany(collectionKey.expense) })
-  @ApiOkResponse({
-    description: responseMessage.success,
-    type: [IReturnExpense],
-  })
-  @ApiNotFoundResponse({
-    description: responseMessage.notFound,
-    type: ExceptionDto,
-  })
-  async getExpensesByUserId(@Req() req: Request): Promise<IReturnExpense[]> {
-    const user = await this.usersService.findOneById(req.user['id']);
-    if (!user) {
-      throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
-    return await this.expensesService.findManyByCategoryId(req.user['id']);
   }
 
   @Delete()
