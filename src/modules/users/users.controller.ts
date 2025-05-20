@@ -46,7 +46,7 @@ export class UsersController {
     if (!user) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
-    return this.usersService.getBasicUserInfo(user);
+    return user;
   }
 
   @Get()
@@ -58,7 +58,7 @@ export class UsersController {
   ): Promise<IReturnUser[]> {
     const users =
       await this.usersService.findManyUsersBySearchString(searchString);
-    return users.map((user) => this.usersService.getBasicUserInfo(user));
+    return users;
   }
 
   // @Post()
@@ -95,7 +95,7 @@ export class UsersController {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
     await this.usersService.updateOneById(id, body);
-    return this.usersService.getBasicUserInfo(user);
+    return user;
   }
 
   @Delete(':id')

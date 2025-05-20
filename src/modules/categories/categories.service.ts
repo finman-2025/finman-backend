@@ -11,19 +11,21 @@ export class CategoriesService {
 
   async findAll(userId: number) {
     return await this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, isDeleted: false },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async findOneById(id: number) {
     return await this.prisma.category.findFirst({
-      where: { id },
+      where: { id, isDeleted: false },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async create(data: CreateCategoryDto, userId: number) {
     const category = await this.prisma.category.findFirst({
-      where: { name: data.name, userId },
+      where: { name: data.name, userId, isDeleted: false },
     });
 
     if (category) {
@@ -32,19 +34,23 @@ export class CategoriesService {
 
     return await this.prisma.category.create({
       data: { name: data.name, limit: data.limit, userId },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async update(id: number, data: CreateCategoryDto) {
     return await this.prisma.category.update({
-      where: { id },
+      where: { id, isDeleted: false },
       data: { name: data.name, limit: data.limit },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async delete(id: number) {
-    return await this.prisma.category.delete({
+    return await this.prisma.category.update({
       where: { id },
+      data: { isDeleted: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 }

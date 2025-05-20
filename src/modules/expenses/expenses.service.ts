@@ -22,7 +22,7 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -36,6 +36,7 @@ export class ExpensesService {
         userId,
         categoryId,
         date: filterDate,
+        isDeleted: false,
       },
       orderBy: { date: 'desc' },
       include: {
@@ -43,25 +44,25 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async findOneById(id: number) {
     return await this.prisma.expense.findFirst({
-      where: { id },
+      where: { id, isDeleted: false },
       include: {
         category: {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async updateOneById(id: number, data: UpdateExpenseDto) {
     return await this.prisma.expense.update({
-      where: { id },
+      where: { id, isDeleted: false },
       data: {
         value: data.value,
         description: data.description,
@@ -73,15 +74,22 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async deleteOneById(id: number) {
-    return await this.prisma.expense.delete({ where: { id } });
+    return await this.prisma.expense.update({
+      where: { id },
+      data: { isDeleted: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+    });
   }
 
   async deleteAllCategoryExpenses(categoryId: number) {
-    return await this.prisma.expense.deleteMany({ where: { categoryId } });
+    return await this.prisma.expense.updateMany({
+      where: { categoryId },
+      data: { isDeleted: true },
+    });
   }
 }
