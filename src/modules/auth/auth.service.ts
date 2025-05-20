@@ -48,7 +48,6 @@ export class AuthService {
     return {
       id: user.id,
       username: user.username,
-      refreshToken: user.refreshToken,
     };
   }
 
@@ -86,33 +85,38 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user.id, user.username);
+    const tokens = await this.getTokens(user['id'], user['username']);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
-    });
+    const refreshTokenData = {
+      token: tokens.refreshToken,
+      userId: user['id'],
+      expiresAt: new Date(Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES')),
+    };
 
-    return tokens;
-  }
-
-  async refreshToken(user: any) {
-    const tokens = await this.getTokens(user.id, user.username);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
-    });
+    await this.prisma.refreshToken.create({ data: refreshTokenData });
 
     return tokens;
   }
 
-  async logout(user: any) {
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: null },
+  async refreshToken(refreshToken: string) {
+    const tokenData = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
     });
+    if (!tokenData || tokenData.expiresAt < new Date()) throw new Error('Invalid refresh token');
 
-    return true;
+    const payload = await this.jwtService.verifyAsync(refreshToken);
+
+    const newAccessToken = await this.jwtService.signAsync(
+      { sub: payload.sub },
+      { expiresIn: '15m' },
+    );
+
+    return new TokensDto(newAccessToken, refreshToken);
+  }
+
+  async logout(userId: number) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: userId },
+    });
   }
 }

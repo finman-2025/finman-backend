@@ -19,8 +19,6 @@ model User {
   username String @unique
   password String
 
-  refreshToken String?
-
   name        String
   email       String
   phoneNumber String?
@@ -29,6 +27,7 @@ model User {
   address     String?
   avatar      String?
 
+  refreshToken      RefreshToken?
   expenses          Expense[]
   categories        Category[]
   exportedDataFiles ExportedDataFile[]
@@ -39,6 +38,22 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@map("user")
+}
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+
+  token     String   @unique
+
+  userId    Int @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token]) // Index for fast lookups
+
+  @@map("refresh_token")
 }
 
 model Category {

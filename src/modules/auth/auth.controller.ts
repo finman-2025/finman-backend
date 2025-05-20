@@ -24,9 +24,10 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 
 import { CreateUserDto, createUserSchema } from '../users/dto';
-import { loginSchema, TokensDto } from './dto';
+import { LoginDto, loginSchema, TokensDto } from './dto';
+import { RefreshDto, refreshSchema } from './dto/refresh.dto';
 import { ICreateUser, IReturnUser } from '../users/interfaces';
-import { ILogin } from './interfaces';
+import { ILogin, IRefresh } from './interfaces';
 
 import { collectionKey, responseMessage, summaries } from 'src/common/text';
 
@@ -47,7 +48,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserDto,
   ): Promise<boolean> {
     return this.authService.register(body);
-  }
+  };
 
   @Post('login')
   @SkipJwtAuth()
@@ -57,17 +58,22 @@ export class AuthController {
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   @ApiBody({ type: ILogin })
   @UsePipes(new ZodValidationPipe(loginSchema))
-  async login(@Req() req: Request): Promise<TokensDto> {
+  async login(
+    @Req() req: Request,
+    @Body() body: LoginDto
+  ): Promise<TokensDto> {
     return this.authService.login(req.user);
   }
 
   @Post('refresh')
-  @ApiBearerAuth()
+  @SkipJwtAuth()
   @ApiOperation({ summary: summaries.refresh() })
   @ApiOkResponse({ description: responseMessage.success, type: TokensDto })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
-  async refresh(@Req() req: Request): Promise<TokensDto> {
-    return this.authService.refreshToken(req.user);
+  @ApiBody({ type: IRefresh })
+  @UsePipes(new ZodValidationPipe(refreshSchema))
+  async refresh(@Body() body: RefreshDto): Promise<TokensDto> {
+    return this.authService.refreshToken(body.refreshToken);
   }
 
   @Get('profile')
@@ -87,7 +93,7 @@ export class AuthController {
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   async logout(@Req() req: Request): Promise<boolean> {
-    await this.authService.logout(req.user);
+    await this.authService.logout(req.user['id']);
     return true;
   }
 }
