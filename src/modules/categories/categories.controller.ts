@@ -28,7 +28,7 @@ import {
   UpdateCategoryDto,
   updateCategorySchema,
 } from './dto';
-import { ICategory, ICreateCategory, IUpdateCategory } from './interfaces';
+import { IReturnCategory, ICreateCategory, IUpdateCategory } from './interfaces';
 
 import { CategoriesService } from './categories.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
@@ -47,12 +47,12 @@ export class CategoriesController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({ description: responseMessage.success, type: IReturnCategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
-  async getCategoryByUser(@Req() req: Request): Promise<ICategory[]> {
+  async getCategoryByUser(@Req() req: Request): Promise<IReturnCategory[]> {
     const categories = await this.categoriesService.findAll(req.user['id']);
     if (!categories) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
@@ -63,14 +63,14 @@ export class CategoriesController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({ description: responseMessage.success, type: IReturnCategory })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,
     type: ExceptionDto,
   })
   async getCategoryById(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
-  ): Promise<ICategory> {
+  ): Promise<IReturnCategory> {
     const category = await this.categoriesService.findOneById(id);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));
@@ -81,7 +81,7 @@ export class CategoriesController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({ description: responseMessage.success, type: IReturnCategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
@@ -91,7 +91,7 @@ export class CategoriesController {
   async createCategory(
     @Req() req: Request,
     @Body() body: CreateCategoryDto,
-  ): Promise<ICategory> {
+  ): Promise<IReturnCategory> {
     const category = await this.categoriesService.create(body, req.user['id']);
     if (!category) {
       throw new InternalServerErrorException(
@@ -105,7 +105,7 @@ export class CategoriesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiBody({ type: IUpdateCategory })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({ description: responseMessage.success, type: IReturnCategory })
   @ApiNotFoundResponse({
     description: responseMessage.notFound,
     type: ExceptionDto,
@@ -117,7 +117,7 @@ export class CategoriesController {
   async updateCategory(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
     @Body(new ZodValidationPipe(updateCategorySchema)) body: UpdateCategoryDto,
-  ): Promise<ICategory> {
+  ): Promise<IReturnCategory> {
     const category = await this.categoriesService.update(id, body);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));

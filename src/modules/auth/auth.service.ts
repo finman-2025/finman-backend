@@ -12,7 +12,7 @@ import { RegisterDto, TokensDto } from './dto';
 import { PrismaService } from 'src/config/db.config';
 import { UsersService } from '../users/users.service';
 
-import { responseMessage } from 'src/common/text';
+import { fieldKey, messages, responseMessage } from 'src/common/text';
 
 @Injectable()
 export class AuthService {
@@ -51,14 +51,15 @@ export class AuthService {
     };
   }
 
-  async getTokens(id: number, username: string) {
-    const payload = { sub: id, username };
+  async getTokens(id: number) {
+    const payload = { sub: id };
+    console.log("payload: ", payload);
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
+        expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
       }),
       this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES'),
+        expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
       }),
     ]);
 
@@ -85,14 +86,15 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user['id'], user['username']);
+    const tokens = await this.getTokens(user['id']);
+    const now = new Date();
 
     const refreshTokenData = {
       token: tokens.refreshToken,
       userId: user['id'],
-      // expiresAt: new Date(
-      //   Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
-      // ),
+      expiresAt: new Date(
+        now.getTime() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+      ),
     };
 
     await this.prisma.refreshToken.create({ data: refreshTokenData });
@@ -105,18 +107,18 @@ export class AuthService {
       where: { token: refreshToken },
     });
     if (!tokenData)
-      throw new UnauthorizedException(responseMessage.sectionExpired);
+      throw new BadRequestException(messages.missing(fieldKey.refreshToken));
 
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken);
       const newAccessToken = await this.jwtService.signAsync(
         { sub: payload.sub },
-        { expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES') },
+        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000 },
       );
 
       return new TokensDto(newAccessToken, refreshToken);
     } catch {
-      throw new UnauthorizedException(responseMessage.sectionExpired);
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
     }
   }
 

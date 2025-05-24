@@ -16,7 +16,7 @@ export class UsersService {
 
   async findOneById(id: number) {
     return await this.prisma.user.findFirst({
-      where: { id, isDeleted: false },
+      where: { id: id, isDeleted: false },
       omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
