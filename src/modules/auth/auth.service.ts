@@ -90,7 +90,9 @@ export class AuthService {
     const refreshTokenData = {
       token: tokens.refreshToken,
       userId: user['id'],
-      expiresAt: new Date(Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES')),
+      // expiresAt: new Date(
+      //   Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
+      // ),
     };
 
     await this.prisma.refreshToken.create({ data: refreshTokenData });
@@ -102,16 +104,20 @@ export class AuthService {
     const tokenData = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
     });
-    if (!tokenData || tokenData.expiresAt < new Date()) throw new Error('Invalid refresh token');
+    if (!tokenData)
+      throw new UnauthorizedException(responseMessage.sectionExpired);
 
-    const payload = await this.jwtService.verifyAsync(refreshToken);
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken);
+      const newAccessToken = await this.jwtService.signAsync(
+        { sub: payload.sub },
+        { expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES') },
+      );
 
-    const newAccessToken = await this.jwtService.signAsync(
-      { sub: payload.sub },
-      { expiresIn: '15m' },
-    );
-
-    return new TokensDto(newAccessToken, refreshToken);
+      return new TokensDto(newAccessToken, refreshToken);
+    } catch {
+      throw new UnauthorizedException(responseMessage.sectionExpired);
+    }
   }
 
   async logout(userId: number) {

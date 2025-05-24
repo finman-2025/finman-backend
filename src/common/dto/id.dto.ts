@@ -7,3 +7,10 @@ export const idSchema = z.coerce
     message: messages.invalid(fieldKey.id),
   })
   .int();
+
+export const optionalIdSchema = z.coerce
+  .number({
+    message: messages.invalid(fieldKey.id),
+  })
+  .int()
+  .optional();

@@ -4,6 +4,7 @@ export const responseMessage = {
   badRequest: 'Tham số không hợp lệ',
   notFound: 'Không tìm thấy dữ liệu',
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
+  sectionExpired: 'Phiên đăng nhập hết hạn',
 };
 
 export const messages = {

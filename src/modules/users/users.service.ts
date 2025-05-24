@@ -7,31 +7,27 @@ import { IReturnUser, IUser } from './interfaces';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findOneByUsernameAndPassword(username: string, password: string) {
-    return await this.prisma.user.findUnique({
-      where: { username, password },
-    });
-  }
-
   async findOneByUsername(username: string) {
     return await this.prisma.user.findUnique({
-      where: { username },
+      where: { username, isDeleted: false },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async findOneById(id: number) {
-    return await this.prisma.user.findUnique({
-      where: { id },
+    return await this.prisma.user.findFirst({
+      where: { id, isDeleted: false },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async findManyUsersBySearchString(searchString: string) {
     return await this.prisma.user.findMany({
       where: {
-        username: {
-          contains: searchString,
-        },
+        username: { contains: searchString },
+        isDeleted: false,
       },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -43,32 +39,27 @@ export class UsersService {
         email: data.email,
         name: data.name,
       },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async updateOneById(id: number, data: UpdateUserDto) {
     return await this.prisma.user.update({
-      where: { id },
+      where: { id, isDeleted: false },
       data: {
         email: data.email,
         name: data.name,
         phoneNumber: data.phoneNumber,
       },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async deleteOneById(id: number) {
-    return await this.prisma.user.delete({
+    return await this.prisma.user.update({
       where: { id },
+      data: { isDeleted: true },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
-  }
-
-  getBasicUserInfo(user: IUser): IReturnUser {
-    const {
-      password,
-      username,
-      ... rest
-    } = user;
-    return rest;
   }
 }

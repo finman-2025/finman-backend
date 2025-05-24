@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id Int @id @default(autoincrement())
 
@@ -16,12 +22,12 @@ model User {
   name        String
   email       String
   phoneNumber String?
-  sex         String?
+  sex         Gender?
   dateOfBirth DateTime?
   address     String?
   avatar      String?
 
-  refreshToken      RefreshToken?
+  refreshTokens     RefreshToken[]
   expenses          Expense[]
   categories        Category[]
   exportedDataFiles ExportedDataFile[]
@@ -30,6 +36,7 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("user")
 }
@@ -39,10 +46,9 @@ model RefreshToken {
 
   token     String   @unique
 
-  userId    Int @unique
+  userId    Int  
   user      User     @relation(fields: [userId], references: [id])
 
-  expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([token]) // Index for fast lookups
@@ -64,6 +70,7 @@ model Category {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("category")
 }
@@ -83,6 +90,7 @@ model Expense {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("expense")
 }
@@ -99,6 +107,7 @@ model FinancialTip {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("financial_tip")
 }
@@ -115,6 +124,7 @@ model ExportedDataFile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("exported_data_file")
 }
@@ -131,6 +141,7 @@ model Notification {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("notification")
 }
@@ -145,6 +156,7 @@ model AIChatSession {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("ai_chat_session")
 }
@@ -165,6 +177,7 @@ model Message {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("message")
 }
