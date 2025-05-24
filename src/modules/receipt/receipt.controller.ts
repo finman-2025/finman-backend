@@ -38,7 +38,7 @@ export class ReceiptController {
     })
     @UsePipes(new ZodValidationPipe(uploadReceiptSchema))
     @UseInterceptors(FileInterceptor('file'))
-    async uploadReceipt(@UploadedFile() file: Express.Multer.File) {
+    async uploadReceipt(@UploadedFile() file: Express.Multer.File): Promise<IReturnReceiptData> {
         if (!file) {
             throw new BadRequestException('No file uploaded.');
         }

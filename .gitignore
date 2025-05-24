@@ -43,7 +43,10 @@ lerna-debug.log*
 .env.local
 
 # json keys
-finman-460309-f63bbb8cc6cb.json
+/config
+
+# multer folder
+/uploads
 
 # temp directory
 .temp

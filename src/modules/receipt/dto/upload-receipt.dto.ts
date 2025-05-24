@@ -2,18 +2,19 @@ import { z } from 'zod';
 
 import { messages, fieldKey } from 'src/common/text';
 
-export const uploadReceiptSchema = z.object({
-    file: z
-        .any()
-        .refine((file) => file && file.mimetype, {
-            message: messages.missing(fieldKey.file),
-        })
-        .refine((file) => ['image/jpeg', 'image/png'].includes(file.mimetype), {
+export const uploadReceiptSchema = z
+    .object({
+        mimetype: z.string().refine((val) => ['image/jpeg', 'image/png'].includes(val), {
             message: messages.invalid(fieldKey.fileType),
-        })
-        .refine((file) => file.size <= 5 * 1024 * 1024, {
+        }),
+        size: z.number().max(5 * 1024 * 1024, {
             message: messages.overThreshold(fieldKey.fileSize),
         }),
-});
+        name: z.string().optional(),
+        path:  z.string().optional(),
+    })
+    .refine((file) => !!file, {
+        message: messages.missing(fieldKey.file),
+    });
 
 export type UploadReceiptDto = z.infer<typeof uploadReceiptSchema>;

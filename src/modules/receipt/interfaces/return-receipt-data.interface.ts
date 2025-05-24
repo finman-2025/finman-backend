@@ -2,14 +2,11 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class IReturnReceiptData {
     @ApiProperty()
-    merchant: string;
+    seller: string;
 
     @ApiProperty()
-    total: number;
+    value: number;
 
     @ApiProperty()
-    date: Date;
-
-    @ApiProperty()
-    category: string;
+    date: string;
 }
