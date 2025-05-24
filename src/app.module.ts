@@ -21,6 +21,7 @@ import { SchedulerService } from './modules/scheduler/scheduler.service';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtStrategy } from './guards/strategies/jwt.strategy';
+import { ExportedDataFileModule } from './modules/exported-data-file/exported-data-file.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { JwtStrategy } from './guards/strategies/jwt.strategy';
     CategoriesModule,
     ExpensesModule,
     AuthModule,
+    ExportedDataFileModule,
   ],
   controllers: [AppController],
   providers: [

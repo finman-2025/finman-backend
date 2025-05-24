@@ -17,14 +17,14 @@ export class ExportedDataFileService {
         private prisma: PrismaService,
     ) {
         this.storage = new Storage({
-            keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            projectId: process.env.GOOGLE_APPLICATION_PROJECT_ID,
+            keyFilename: process.env.GOOGLE_JSON_KEY_PATH,
+            projectId: process.env.GOOGLE_PROJECT_ID,
         });
         this.bucketName = process.env.GOOGLE_STORAGE_BUCKET_NAME;
         this.bucketPath = process.env.GOOGLE_STORAGE_BUCKET_PATH;
     }
 
-    async uploadFile(file: Express.Multer.File, userId: string, fileName: string, fileType: string) {
+    async uploadFile(file: Express.Multer.File, userId: string, fileName: string) {
         try {
             const bucket = this.storage.bucket(this.bucketName);
             const destination = `${userId}/${fileName}`;
@@ -36,7 +36,8 @@ export class ExportedDataFileService {
                 },
             });
 
-            return `${this.bucketPath}/${this.bucketName}/${destination}`;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            return gcsFile.publicUrl();
         } catch (error) {
             throw new InternalServerErrorException('Failed to export data');
         }

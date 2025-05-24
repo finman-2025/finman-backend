@@ -1,6 +1,10 @@
-import { Controller, Delete, Get, Param, Post, Req, UploadedFile } from "@nestjs/common";
-import { ExportedDataFileService } from "./exported-data-file.service";
+import { Controller, Delete, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { FileInterceptor } from "@nestjs/platform-express";
+
 import { Request } from "express";
+
+import { ExportedDataFileService } from "./exported-data-file.service";
 
 @Controller('exported_data_file')
 export class ExportedDataFileController {
@@ -9,6 +13,20 @@ export class ExportedDataFileController {
     ) {}
     
     @Post()
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Receipt image (JPEG or PNG, max 5MB)',
+                },
+            },
+        },
+    })
+    @UseInterceptors(FileInterceptor('file'))
     async uploadFile(
         @Req() req: Request,
         @UploadedFile() file: Express.Multer.File
@@ -17,8 +35,7 @@ export class ExportedDataFileController {
         const fileUrl = await this.exportedDataFileService.uploadFile(
             file,
             req.user['id'],
-            fileName,
-            "csv"
+            fileName
         );
         return { url: fileUrl };
     }
