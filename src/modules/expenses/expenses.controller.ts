@@ -75,7 +75,7 @@ export class ExpensesController {
     type: [IReturnExpense],
   })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async getExpenses(
@@ -117,7 +117,7 @@ export class ExpensesController {
     type: ITotalExpenseValue,
   })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async getTotalExpenseValue(
@@ -145,7 +145,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.getOne(collectionKey.expense) })
   @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async getExpenseById(
@@ -184,7 +184,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.update(collectionKey.expense) })
   @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
@@ -208,7 +208,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.delete(collectionKey.expense) })
   @ApiOkResponse({ description: responseMessage.success })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async deleteExpense(
@@ -227,7 +227,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.deleteMany(collectionKey.expense) })
   @ApiOkResponse({ description: responseMessage.success })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({

@@ -2,8 +2,9 @@ export const responseMessage = {
   success: 'Thành công',
   internalServerError: 'Hệ thống đang bị gián đoạn, vui lòng thử lại sau',
   badRequest: 'Tham số không hợp lệ',
-  notFound: 'Không tìm thấy dữ liệu',
+  notFound: (field: string) => `Không tìm thấy ${field ? field.toLocaleLowerCase() : 'dữ liệu'}`,
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
+  alreadyExists: (field: string) => `${field ? field.toLocaleLowerCase() : 'Dữ liệu'} đã tồn tại`,
   sectionExpired: 'Phiên đăng nhập hết hạn',
   startDateBeforeEndDate: 'Ngày bắt đầu phải trước ngày kết thúc',
 };

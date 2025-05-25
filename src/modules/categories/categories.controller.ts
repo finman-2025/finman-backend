@@ -93,6 +93,7 @@ export class CategoriesController {
   ): Promise<ICategoryAnalytics[]> {
     const { startDate, endDate } = query;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await this.categoriesService.findAllWithExpenseValue(
       req.user['id'],
       startDate,
@@ -105,7 +106,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   async getCategoryById(
@@ -147,7 +148,7 @@ export class CategoriesController {
   @ApiBody({ type: IUpdateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
@@ -170,7 +171,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   async deleteCategory(
