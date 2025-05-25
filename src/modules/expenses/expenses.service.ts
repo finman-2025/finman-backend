@@ -3,39 +3,20 @@ import { PrismaService } from 'src/config/db.config';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 
 import { getEndOfDay, getStartOfDay } from 'src/common/utils';
+import { ExpenseType } from '@prisma/client';
 
 @Injectable()
 export class ExpensesService {
   constructor(private prisma: PrismaService) {}
 
-  async createOne(data: CreateExpenseDto) {
-    return await this.prisma.expense.create({
-      data: {
-        userId: data.userId,
-        value: data.value,
-        description: data.description,
-        date: data.date,
-        categoryId: data.categoryId,
-      },
-      include: {
-        category: {
-          select: { id: true, name: true },
-        },
-      },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
-    });
-  }
-
   async findMany(userId: number, categoryId?: number, date?: Date) {
-    const filterDate = date
-      ? { gte: getStartOfDay(date), lte: getEndOfDay(date) }
-      : undefined;
-
     return await this.prisma.expense.findMany({
       where: {
         userId,
-        categoryId,
-        date: filterDate,
+        categoryId: categoryId === 0 ? null : categoryId,
+        date: date
+          ? { gte: getStartOfDay(date), lte: getEndOfDay(date) }
+          : undefined,
         isDeleted: false,
       },
       orderBy: { date: 'desc' },
@@ -44,7 +25,7 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -56,14 +37,15 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async updateOneById(id: number, data: UpdateExpenseDto) {
-    return await this.prisma.expense.update({
-      where: { id, isDeleted: false },
+  async createOne(data: CreateExpenseDto) {
+    return await this.prisma.expense.create({
       data: {
+        userId: data.userId,
+        type: data.type,
         value: data.value,
         description: data.description,
         date: data.date,
@@ -74,7 +56,56 @@ export class ExpensesService {
           select: { id: true, name: true },
         },
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
+    });
+  }
+
+  async getTotalExpenseValue(
+    userId: number,
+    categoryId?: number,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        userId,
+        categoryId: categoryId === 0 ? null : categoryId,
+        date: {
+          gte: startDate ? getStartOfDay(startDate) : undefined,
+          lte: endDate ? getEndOfDay(endDate) : undefined,
+        },
+        isDeleted: false,
+      },
+      select: { value: true, type: true },
+    });
+
+    const spent = expenses
+      .filter(({ type }) => type === ExpenseType.OUTCOME)
+      .reduce((result, { value }) => result + value, 0);
+
+    const earned = expenses
+      .filter(({ type }) => type === ExpenseType.INCOME)
+      .reduce((result, { value }) => result + value, 0);
+
+    return { spent, earned };
+  }
+
+  async updateOneById(id: number, data: UpdateExpenseDto) {
+    return await this.prisma.expense.update({
+      where: { id, isDeleted: false },
+      data: {
+        value: data.value,
+        type: data.type,
+        description: data.description,
+        date: data.date,
+        categoryId: data.categoryId,
+      },
+      include: {
+        category: {
+          select: { id: true, name: true },
+        },
+      },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -82,7 +113,7 @@ export class ExpensesService {
     return await this.prisma.expense.update({
       where: { id },
       data: { isDeleted: true },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 

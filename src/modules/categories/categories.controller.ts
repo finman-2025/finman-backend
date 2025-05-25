@@ -10,6 +10,7 @@ import {
   Patch,
   Delete,
   Req,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -18,17 +19,26 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Request } from 'express';
 
+import { ExpenseType } from '@prisma/client';
 import { idSchema, ExceptionDto } from 'src/common/dto';
 import {
   CreateCategoryDto,
   createCategorySchema,
+  GetAnalyticsDto,
+  getAnalyticsSchema,
   UpdateCategoryDto,
   updateCategorySchema,
 } from './dto';
-import { ICategory, ICreateCategory, IUpdateCategory } from './interfaces';
+import {
+  ICategory,
+  ICategoryAnalytics,
+  ICreateCategory,
+  IUpdateCategory,
+} from './interfaces';
 
 import { CategoriesService } from './categories.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
@@ -47,17 +57,47 @@ export class CategoriesController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({ description: responseMessage.success, type: [ICategory] })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
   async getCategoryByUser(@Req() req: Request): Promise<ICategory[]> {
-    const categories = await this.categoriesService.findAll(req.user['id']);
-    if (!categories) {
-      throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
-    return categories;
+    return await this.categoriesService.findAll(req.user['id']);
+  }
+
+  @Get('analytics')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getAnalytics() })
+  @ApiQuery({
+    name: 'startDate',
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [ICategoryAnalytics],
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest,
+    type: ExceptionDto,
+  })
+  async getAnalytics(
+    @Req() req: Request,
+    @Query(new ZodValidationPipe(getAnalyticsSchema)) query: GetAnalyticsDto,
+  ): Promise<ICategoryAnalytics[]> {
+    const { startDate, endDate } = query;
+
+    return await this.categoriesService.findAllWithExpenseValue(
+      req.user['id'],
+      startDate,
+      endDate,
+    );
   }
 
   @Get(':id')

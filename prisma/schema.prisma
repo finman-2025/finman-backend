@@ -13,6 +13,16 @@ enum Gender {
   OTHER
 }
 
+enum ExpenseType {
+  INCOME
+  OUTCOME
+}
+
+enum Sender {
+  USER
+  AI
+}
+
 model User {
   id Int @id @default(autoincrement())
 
@@ -78,6 +88,7 @@ model Category {
 model Expense {
   id Int @id @default(autoincrement())
 
+  type        ExpenseType
   value       Int
   description String?
   date        DateTime
@@ -159,11 +170,6 @@ model AIChatSession {
   isDeleted Boolean  @default(false)
 
   @@map("ai_chat_session")
-}
-
-enum Sender {
-  USER
-  AI
 }
 
 model Message {

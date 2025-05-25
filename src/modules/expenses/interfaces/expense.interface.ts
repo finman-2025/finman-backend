@@ -1,8 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ExpenseType } from '@prisma/client';
 
 export class IExpense {
   @ApiProperty()
   id: number;
+
+  @ApiProperty()
+  type: ExpenseType;
 
   @ApiProperty()
   value: number;
@@ -15,10 +19,4 @@ export class IExpense {
 
   @ApiProperty()
   categoryId: number;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
 }

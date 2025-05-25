@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ExpenseType } from '@prisma/client';
+
 import { messages, fieldKey } from 'src/common/text';
 import { nameRegex } from 'src/common/utils';
 
@@ -9,6 +11,12 @@ export const createExpenseSchema = z.object({
     .int(messages.invalid(fieldKey.userId))
     .positive(messages.invalid(fieldKey.userId))
     .optional(),
+  type: z.preprocess(
+    (value) => value?.toString()?.toUpperCase(),
+    z.nativeEnum(ExpenseType, {
+      message: messages.invalid(fieldKey.expenseType),
+    }),
+  ),
   value: z
     .number({ message: messages.missing(fieldKey.value) })
     .int(messages.invalid(fieldKey.value))

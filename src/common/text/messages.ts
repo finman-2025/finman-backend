@@ -5,6 +5,7 @@ export const responseMessage = {
   notFound: 'Không tìm thấy dữ liệu',
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
   sectionExpired: 'Phiên đăng nhập hết hạn',
+  startDateBeforeEndDate: 'Ngày bắt đầu phải trước ngày kết thúc',
 };
 
 export const messages = {
@@ -22,6 +23,8 @@ export const summaries = {
     `Lấy thông tin một ${collection.toLocaleLowerCase()}`,
   getMany: (collection: string) =>
     `Lấy danh sách các ${collection.toLocaleLowerCase()}`,
+  getTotal: (collection: string) =>
+    `Lấy tổng ${collection.toLocaleLowerCase()}`,
   getList: (collection: string) =>
     `Lấy danh sách ${collection.toLocaleLowerCase()}`,
   create: (collection: string) =>
@@ -31,9 +34,10 @@ export const summaries = {
   delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
   deleteMany: (collection: string) =>
     `Xóa nhiều ${collection.toLocaleLowerCase()}`,
-  login: () => `Đăng nhập`,
-  register: () => `Đăng ký`,
-  refresh: () => `Làm mới token`,
-  logout: () => `Đăng xuất`,
-  profile: () => `Thông tin tài khoản`,
+  getAnalytics: () => 'Lấy phân tích',
+  login: () => 'Đăng nhập',
+  register: () => 'Đăng ký',
+  refresh: () => 'Làm mới token',
+  logout: () => 'Đăng xuất',
+  profile: () => 'Thông tin tài khoản',
 };

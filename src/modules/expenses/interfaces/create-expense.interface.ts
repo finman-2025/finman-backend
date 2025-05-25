@@ -1,9 +1,4 @@
-import { PickType } from '@nestjs/swagger';
+import { OmitType, PickType } from '@nestjs/swagger';
 import { IExpense } from './expense.interface';
 
-export class ICreateExpense extends PickType(IExpense, [
-  'value',
-  'description',
-  'date',
-  'categoryId',
-]) {}
+export class ICreateExpense extends OmitType(IExpense, ['id']) {}

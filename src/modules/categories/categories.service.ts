@@ -1,25 +1,60 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/config/db.config';
 
+import { ExpenseType } from '@prisma/client';
 import type { CreateCategoryDto } from './dto';
+import { ExpensesService } from '../expenses/expenses.service';
 
 import { fieldKey, messages } from 'src/common/text';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private expensesService: ExpensesService,
+  ) {}
 
   async findAll(userId: number) {
-    return await this.prisma.category.findMany({
+    console.log(userId);
+    const categories = await this.prisma.category.findMany({
       where: { userId, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      orderBy: { id: 'asc' },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
+
+    return [...categories, { id: 0, name: fieldKey.other }];
+  }
+
+  async findAllWithExpenseValue(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const categories = await this.prisma.category.findMany({
+      where: { userId, isDeleted: false },
+      select: { id: true, name: true, limit: true },
+      orderBy: { id: 'asc' },
+    });
+
+    categories.push({ id: 0, name: fieldKey.other, limit: undefined });
+
+    return Promise.all(
+      categories.map(async (category) => {
+        const expenseValue = await this.expensesService.getTotalExpenseValue(
+          userId,
+          category.id,
+          startDate,
+          endDate,
+        );
+        return { ...category, expenseValue };
+      }),
+    );
   }
 
   async findOneById(id: number) {
     return await this.prisma.category.findFirst({
       where: { id, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -33,16 +68,16 @@ export class CategoriesService {
     }
 
     return await this.prisma.category.create({
-      data: { name: data.name, limit: data.limit, userId },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      data: { name: data.name, limit: data.limit, image: data.image, userId },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
   async update(id: number, data: CreateCategoryDto) {
     return await this.prisma.category.update({
       where: { id, isDeleted: false },
-      data: { name: data.name, limit: data.limit },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      data: { name: data.name, limit: data.limit, image: data.image },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
@@ -50,7 +85,7 @@ export class CategoriesService {
     return await this.prisma.category.update({
       where: { id },
       data: { isDeleted: true },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 }

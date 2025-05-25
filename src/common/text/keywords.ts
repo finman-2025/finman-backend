@@ -24,6 +24,8 @@ export const fieldKey = {
   description: 'Mô tả',
   userId: 'Id người dùng',
   categoryId: 'Id danh mục',
+  expenseType: 'Kiểu chi tiêu',
+  other: 'Khác',
   date: 'Ngày',
 };
 

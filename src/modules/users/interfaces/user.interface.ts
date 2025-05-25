@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class IUser {
   @ApiProperty()
@@ -16,24 +16,18 @@ export class IUser {
   @ApiProperty()
   email: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   phoneNumber: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   sex: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   dateOfBirth: Date;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   address: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   avatar: string;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
 }
