@@ -12,13 +12,4 @@ export class ICategory {
 
   @ApiPropertyOptional()
   limit?: number;
-
-  @ApiProperty()
-  userId: number;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
 }

@@ -17,6 +17,10 @@ export const updateCategorySchema = z.object({
     .int(messages.invalid(fieldKey.limit))
     .positive(messages.invalid(fieldKey.limit))
     .optional(),
+  image: z
+    .string()
+    .transform((value) => (value ? value.trim() : undefined))
+    .optional(),
 });
 
 export type UpdateCategoryDto = z.infer<typeof updateCategorySchema>;

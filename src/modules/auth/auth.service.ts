@@ -1,18 +1,21 @@
-import * as argon2 from 'argon2';
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+
+import * as argon2 from 'argon2';
+import { randomBytes } from 'crypto';
 
 import { RegisterDto, TokensDto } from './dto';
 import { PrismaService } from 'src/config/db.config';
 import { UsersService } from '../users/users.service';
 
-import { responseMessage } from 'src/common/text';
+import { fieldKey, messages, responseMessage } from 'src/common/text';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +37,7 @@ export class AuthService {
   async validateUser(username: string, password: string) {
     const user = await this.usersService.findOneByUsername(username);
     if (!user)
-      throw new BadRequestException(responseMessage.wrongUsernameOrPassword);
+      throw new NotFoundException(responseMessage.notFound(fieldKey.username));
 
     const valid = await this.verifyPassword(user.password, password);
     if (!valid)
@@ -51,23 +54,29 @@ export class AuthService {
     };
   }
 
-  async getTokens(id: number, username: string) {
-    const payload = { sub: id, username };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
-      }),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES'),
-      }),
-    ]);
+  async getTokens(id: number) {
+    const payload = { sub: id };
+
+    // const [accessToken, refreshToken] = await Promise.all([
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
+    //   }),
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+    //   }),
+    // ]);
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
+    });
+    const refreshToken = randomBytes(64).toString('hex');
 
     return new TokensDto(accessToken, refreshToken);
   }
 
   async register(dto: RegisterDto) {
     const userExists = await this.usersService.findOneByUsername(dto.username);
-    if (userExists) throw new BadRequestException('User already exists');
+    if (userExists) throw new ConflictException(responseMessage.alreadyExists(fieldKey.username));
 
     const hash = await this.hashPassword(dto.password);
     const user = await this.prisma.user.create({
@@ -79,21 +88,24 @@ export class AuthService {
       },
     });
 
-    if (!user) throw new ServiceUnavailableException('Can not create new user');
+    if (!user) throw new ServiceUnavailableException(responseMessage.internalServerError);
 
     return true;
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user['id'], user['username']);
+    const tokens = await this.getTokens(user['id']);
+    const now  = new Date();
 
-    const refreshTokenData = {
-      token: tokens.refreshToken,
-      userId: user['id'],
-      expiresAt: new Date(Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES')),
-    };
-
-    await this.prisma.refreshToken.create({ data: refreshTokenData });
+    await this.prisma.refreshToken.create({
+      data: {
+        token: tokens.refreshToken,
+        userId: user['id'],
+        expiresAt: new Date(
+          now.getTime() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+        ),
+      },
+    });
 
     return tokens;
   }
@@ -102,16 +114,19 @@ export class AuthService {
     const tokenData = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
     });
-    if (!tokenData || tokenData.expiresAt < new Date()) throw new Error('Invalid refresh token');
+    if (!tokenData)
+      throw new BadRequestException(messages.missing(fieldKey.refreshToken));
 
-    const payload = await this.jwtService.verifyAsync(refreshToken);
+    try {
+      const newAccessToken = await this.jwtService.signAsync(
+        { sub: tokenData.userId },
+        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000 },
+      );
 
-    const newAccessToken = await this.jwtService.signAsync(
-      { sub: payload.sub },
-      { expiresIn: '15m' },
-    );
-
-    return new TokensDto(newAccessToken, refreshToken);
+      return new TokensDto(newAccessToken, refreshToken);
+    } catch {
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
+    }
   }
 
   async logout(userId: number) {

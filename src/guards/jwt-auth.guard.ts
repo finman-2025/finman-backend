@@ -15,9 +15,23 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       SKIP_JWT_AUTH_KEY,
       [context.getHandler(), context.getClass()],
     );
+    // Store isPublic in the request for use in handleRequest
+    const request = context.switchToHttp().getRequest();
+    request.isPublic = isPublic;
     if (isPublic) {
       return true;
     }
     return super.canActivate(context);
+  }
+
+  handleRequest(err, user, info, context) {
+    // Allow public endpoints to pass through without authentication
+    const req = context.switchToHttp().getRequest();
+    if (req.isPublic) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return user;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return super.handleRequest(err, user, info, context);
   }
 }

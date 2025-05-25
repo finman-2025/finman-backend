@@ -1,22 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ExpenseType } from '@prisma/client';
 
-export class IExpense {
+export class IFinancialTip {
   @ApiProperty()
   id: number;
 
   @ApiProperty()
-  type: ExpenseType;
+  title: string;
 
   @ApiProperty()
-  value: number;
+  author: string;
 
-  @ApiProperty()
-  description: string;
+  @ApiPropertyOptional()
+  authorImage?: string;
 
   @ApiProperty()
   date: Date;
 
   @ApiProperty()
-  categoryId: number;
+  type: string;
+
+  @ApiProperty()
+  content: string;
 }

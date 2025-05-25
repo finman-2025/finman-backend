@@ -2,8 +2,11 @@ export const responseMessage = {
   success: 'Thành công',
   internalServerError: 'Hệ thống đang bị gián đoạn, vui lòng thử lại sau',
   badRequest: 'Tham số không hợp lệ',
-  notFound: 'Không tìm thấy dữ liệu',
+  notFound: (field: string) => `Không tìm thấy ${field ? field.toLocaleLowerCase() : 'dữ liệu'}`,
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
+  alreadyExists: (field: string) => `${field ? field.toLocaleLowerCase() : 'Dữ liệu'} đã tồn tại`,
+  sectionExpired: 'Phiên đăng nhập hết hạn',
+  startDateBeforeEndDate: 'Ngày bắt đầu phải trước ngày kết thúc',
 };
 
 export const messages = {
@@ -14,6 +17,8 @@ export const messages = {
   missing: (field: string) => `Thiếu ${field.toLocaleLowerCase()}`,
   nameExists: (collection: string = '') =>
     `Tên ${collection ? collection.toLocaleLowerCase() + ' ' : ''}đã tồn tại`,
+  unavailableService: (service: string = '') =>
+    `Dịch vụ ${service.toLocaleLowerCase().trim()} không khả dụng` 
 };
 
 export const summaries = {
@@ -21,6 +26,8 @@ export const summaries = {
     `Lấy thông tin một ${collection.toLocaleLowerCase()}`,
   getMany: (collection: string) =>
     `Lấy danh sách các ${collection.toLocaleLowerCase()}`,
+  getTotal: (collection: string) =>
+    `Lấy tổng ${collection.toLocaleLowerCase()}`,
   getList: (collection: string) =>
     `Lấy danh sách ${collection.toLocaleLowerCase()}`,
   create: (collection: string) =>
@@ -30,9 +37,10 @@ export const summaries = {
   delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
   deleteMany: (collection: string) =>
     `Xóa nhiều ${collection.toLocaleLowerCase()}`,
-  login: () => `Đăng nhập`,
-  register: () => `Đăng ký`,
-  refresh: () => `Làm mới token`,
-  logout: () => `Đăng xuất`,
-  profile: () => `Thông tin tài khoản`,
+  getAnalytics: () => 'Lấy phân tích',
+  login: () => 'Đăng nhập',
+  register: () => 'Đăng ký',
+  refresh: () => 'Làm mới token',
+  logout: () => 'Đăng xuất',
+  profile: () => 'Thông tin tài khoản',
 };

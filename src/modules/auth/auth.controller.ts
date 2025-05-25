@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Post,
   Req,
   UseGuards,
@@ -48,7 +49,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(createUserSchema)) body: CreateUserDto,
   ): Promise<boolean> {
     return this.authService.register(body);
-  };
+  }
 
   @Post('login')
   @SkipJwtAuth()
@@ -58,10 +59,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   @ApiBody({ type: ILogin })
   @UsePipes(new ZodValidationPipe(loginSchema))
-  async login(
-    @Req() req: Request,
-    @Body() body: LoginDto
-  ): Promise<TokensDto> {
+  async login(@Req() req: Request, @Body() body: LoginDto): Promise<TokensDto> {
     return this.authService.login(req.user);
   }
 
@@ -83,8 +81,8 @@ export class AuthController {
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   async profile(@Req() req: Request): Promise<IReturnUser> {
     const user = await this.userService.findOneById(req.user['id']);
-    if (!user) throw new BadRequestException('User not found');
-    return this.userService.getBasicUserInfo(user);
+    if (!user) throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+    return user;
   }
 
   @Post('logout')

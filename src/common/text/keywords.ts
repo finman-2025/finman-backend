@@ -1,5 +1,3 @@
-import { ref } from "process";
-
 export const collectionKey = {
   user: 'Người dùng',
   category: 'Danh mục',
@@ -26,7 +24,14 @@ export const fieldKey = {
   description: 'Mô tả',
   userId: 'Id người dùng',
   categoryId: 'Id danh mục',
+  expenseType: 'Kiểu chi tiêu',
+  other: 'Khác',
   date: 'Ngày',
+  author: 'Tác giả',
+  authorImage: 'Ảnh tác giả',
+  content: 'Nội dung',
+  title: 'Tiêu đề',
+  type: 'Thể loại',
 };
 
 export const TokenType = {

@@ -45,6 +45,9 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# json keys
+finman-460309-f63bbb8cc6cb.json
+
 # temp directory
 .temp
 .tmp
