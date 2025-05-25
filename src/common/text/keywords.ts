@@ -27,6 +27,11 @@ export const fieldKey = {
   expenseType: 'Kiểu chi tiêu',
   other: 'Khác',
   date: 'Ngày',
+  author: 'Tác giả',
+  authorImage: 'Ảnh tác giả',
+  content: 'Nội dung',
+  title: 'Tiêu đề',
+  type: 'Thể loại',
 };
 
 export const TokenType = {

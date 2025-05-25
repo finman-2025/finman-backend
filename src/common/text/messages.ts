@@ -16,6 +16,8 @@ export const messages = {
   missing: (field: string) => `Thiếu ${field.toLocaleLowerCase()}`,
   nameExists: (collection: string = '') =>
     `Tên ${collection ? collection.toLocaleLowerCase() + ' ' : ''}đã tồn tại`,
+  unavailableService: (service: string = '') =>
+    `Dịch vụ ${service.toLocaleLowerCase().trim()} không khả dụng` 
 };
 
 export const summaries = {
