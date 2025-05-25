@@ -1,11 +1,15 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 
-import { Repository } from 'typeorm';
-import { Storage } from '@google-cloud/storage';
 import * as fs from 'fs';
+import { promisify } from "util";
+
+import { Storage } from '@google-cloud/storage';
 
 import { PrismaService } from "src/config/db.config";
+import { collectionKey, messages, responseMessage } from "src/common/text";
+
+const unlinkAsync = promisify(fs.unlink);
+const fsReadFileAsync = promisify(fs.readFile);
 
 @Injectable()
 export class ExportedDataFileService {
@@ -24,32 +28,61 @@ export class ExportedDataFileService {
         this.bucketPath = process.env.GOOGLE_STORAGE_BUCKET_PATH;
     }
 
-    async uploadFile(file: Express.Multer.File, userId: string, fileName: string) {
+    async uploadFile(userId: number, filePath: string, fileName: string, fileType: string) {
         try {
+            const file = await fsReadFileAsync(filePath);
+            if (!file) {
+                throw new InternalServerErrorException(responseMessage.internalServerError);
+            }
+
             const bucket = this.storage.bucket(this.bucketName);
-            const destination = `${userId}/${fileName}`;
+            const destination = `exported_data_files/${userId}/${fileName}`;
             const gcsFile = bucket.file(destination);
 
-            await gcsFile.save(file.buffer, {
+            await gcsFile.save(file, {
                 metadata: {
-                    contentType: file.mimetype
+                    contentType: fileType
                 },
             });
+            const link = gcsFile.publicUrl();
+
+            await this.prisma.exportedDataFile.create({
+                data: {
+                    userId: userId,
+                    fileName: fileName,
+                    fileType: fileType,
+                    url: link,
+                }
+            });
+
+            await unlinkAsync(filePath);
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-            return gcsFile.publicUrl();
+            return link;
         } catch (error) {
+            console.error('uploadFile error:',error);
             throw new InternalServerErrorException('Failed to export data');
         }
     }
 
-    async deleteFile(filePath: string): Promise<void> {
+    async deleteFile(userId: number, fileName: string, filePath: string): Promise<void> {
+        const fileExists = await this.prisma.exportedDataFile.findFirst({
+            where: { userId, fileName },
+            omit: { createdAt: true, updatedAt: true }
+        });
+        if (!fileExists) {
+            throw new NotFoundException(messages.notFound(collectionKey.exportedDataFile));
+        }
+
         await this.storage.bucket(this.bucketName).file(filePath).delete();
+        await this.prisma.exportedDataFile.delete({
+            where: { id: fileExists.id },
+        });
     }
 
-    getFileUrl(fileName: string): string {
-        return `${this.bucketPath}/${this.bucketName}/${fileName}`;
-      }
+    getFileUrl(userId: number, fileName: string): string {
+        return `exported_data_files/${userId}/${fileName}`;
+    }
 
     async listUserExportedFiles(userId: number): Promise<any> {
         const fileInfos = await this.prisma.exportedDataFile.findMany({
@@ -76,7 +109,10 @@ export class ExportedDataFileService {
 
     async fetchUserExportedFile(userId: number, fileName: string): Promise<NodeJS.ReadableStream> {
         const fileInfo = await this.prisma.exportedDataFile.findFirst({
-            where: { userId, fileName },
+            where: {
+                userId: userId,
+                fileName: fileName
+            },
             omit: { id: true, userId: true, createdAt: true, updatedAt: true }
         });
         if (!fileInfo) {
@@ -84,11 +120,13 @@ export class ExportedDataFileService {
         }
 
         const bucket = this.storage.bucket(this.bucketName);
+        const filePath = this.getFileUrl(userId, fileName);
         try {
-            const [file] = await bucket.file(`${fileInfo.filePath}.${fileInfo.fileType}`).exists();
+            const [file] = await bucket.file(filePath).exists();
 
             if (file) {
-                const fileBlob = bucket.file(`${fileInfo.filePath}.${fileInfo.fileType}`);
+                const fileBlob = bucket.file(filePath);
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return fileBlob.createReadStream();
             } else {
                 throw new InternalServerErrorException('File not found');

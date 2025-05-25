@@ -30,7 +30,6 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: appConfig.payloadLimit }));
   app.use(json({ limit: appConfig.payloadLimit }));
   app.use(compression());
-  app.use(multer({ limits: { fileSize: 10 * 1024 * 1024 } }).any());
 
   useSwagger(app);
 

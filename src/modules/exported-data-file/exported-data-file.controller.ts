@@ -1,10 +1,12 @@
-import { Controller, Delete, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, InternalServerErrorException, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiParam } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 
 import { Request } from "express";
 
 import { ExportedDataFileService } from "./exported-data-file.service";
+import { IFileName } from "./interfaces";
+import { responseMessage } from "src/common/text";
 
 @Controller('exported_data_file')
 export class ExportedDataFileController {
@@ -13,6 +15,7 @@ export class ExportedDataFileController {
     ) {}
     
     @Post()
+    @ApiBearerAuth()
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
@@ -21,7 +24,7 @@ export class ExportedDataFileController {
                 file: {
                     type: 'string',
                     format: 'binary',
-                    description: 'Receipt image (JPEG or PNG, max 5MB)',
+                    description: 'Upload a file (TXT, PDF, CSV, XLS, XLSX, max 5MB)',
                 },
             },
         },
@@ -31,33 +34,47 @@ export class ExportedDataFileController {
         @Req() req: Request,
         @UploadedFile() file: Express.Multer.File
     ) {
+        console.log('File uploaded:', file);
+        if (!file) {
+            throw new InternalServerErrorException('No file uploaded or file is invalid');
+        }
         const fileName = `${Date.now()}-${file.originalname}`;
         const fileUrl = await this.exportedDataFileService.uploadFile(
-            file,
             req.user['id'],
-            fileName
+            file.path,
+            fileName,
+            file.mimetype,
         );
         return { url: fileUrl };
     }
 
     @Get(':fileName')
+    @ApiBearerAuth()
+    @ApiParam({ name: 'fileName', type: String, description: 'Name of the file to retrieve' })
     async getFile(
         @Req() req: Request,
-        @Param() fileName: string 
+        @Param() param: { fileName: string } 
     ) {
         const stream = await this.exportedDataFileService.fetchUserExportedFile(
             req.user['id'],
-            fileName
+            param.fileName
         );
         return stream;
     }
 
     @Delete(':fileName')
+    @ApiBearerAuth()
+    @ApiBody({ type: IFileName })
     async deleteFile(
         @Req() req: Request,
-        @Param() fileName: string
+        @Body() body: IFileName
     ) {
-        const filePath = this.exportedDataFileService.getFileUrl(fileName);
-        const result = await this.exportedDataFileService.deleteFile(filePath);
+        const filePath = this.exportedDataFileService.getFileUrl(req.user['id'], body.fileName);
+        await this.exportedDataFileService.deleteFile(
+            req.user['id'],
+            body.fileName,
+            filePath
+        );
+        return { messages: responseMessage.success };
     }
 }
