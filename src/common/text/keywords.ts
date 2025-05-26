@@ -4,6 +4,7 @@ export const collectionKey = {
   expense: 'Chi tiêu',
   tips: 'Gợi ý',
   token: 'Token',
+  exportedDataFile: 'Tệp dữ liệu đã xuất'
 };
 
 export const fieldKey = {

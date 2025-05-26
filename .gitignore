@@ -38,18 +38,18 @@ lerna-debug.log*
 # json keys
 /config
 
+# multer uploads
+/uploads
+
+# keys
+/certs/*
+
 # dotenv environment variable files
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
-
-# multer folder
-/uploads
-
-# keys
-/certs/*
 
 # temp directory
 .temp

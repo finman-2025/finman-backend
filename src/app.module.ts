@@ -21,6 +21,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchedulerService } from './modules/scheduler/scheduler.service';
 import { JwtStrategy } from './guards/strategies/jwt.strategy';
+import { ExportedDataFileModule } from './modules/exported-data-file/exported-data-file.module';
 import { ReceiptModule } from './modules/receipt/receipt.module';
 
 @Module({
@@ -34,6 +35,7 @@ import { ReceiptModule } from './modules/receipt/receipt.module';
     ExpensesModule,
     AuthModule,
     FinancialTipsModule,
+    ExportedDataFileModule,
     ReceiptModule,
   ],
   controllers: [AppController],

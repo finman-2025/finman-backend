@@ -54,15 +54,14 @@ model User {
 model RefreshToken {
   id Int @id @default(autoincrement())
 
-  token     String   @unique
+  token String @unique
 
-  userId    Int  
-  user      User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 
   @@index([token]) // Index for fast lookups
-
   @@map("refresh_token")
 }
 
@@ -130,8 +129,8 @@ model ExportedDataFile {
   userId Int
 
   fileName String
-  filePath String
   fileType String
+  url      String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

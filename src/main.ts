@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
 import * as compression from 'compression';
+import * as multer from 'multer';
 
 import { AppConfig } from './config/app.config';
 
