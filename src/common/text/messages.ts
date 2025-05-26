@@ -17,7 +17,8 @@ export const messages = {
   nameExists: (collection: string = '') =>
     `Tên ${collection ? collection.toLocaleLowerCase() + ' ' : ''}đã tồn tại`,
   unavailableService: (service: string = '') =>
-    `Dịch vụ ${service.toLocaleLowerCase().trim()} không khả dụng` 
+    `Dịch vụ ${service.toLocaleLowerCase().trim()} không khả dụng`,
+  overThreshold: (threshold: string = '') => `Giá trị ${threshold} vượt ngưỡng`,
 };
 
 export const summaries = {
@@ -42,4 +43,5 @@ export const summaries = {
   refresh: () => 'Làm mới token',
   logout: () => 'Đăng xuất',
   profile: () => 'Thông tin tài khoản',
+  uploadReceipt: () => `Tải ảnh biên lai lên`,
 };
