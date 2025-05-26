@@ -5,7 +5,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Request } from "express";
 
 import { ExportedDataFileService } from "./exported-data-file.service";
-import { IFileName } from "./interfaces";
+import { IFileName, IExportExpenses } from "./interfaces";
 import { responseMessage } from "src/common/text";
 
 @Controller('exported_data_file')
@@ -62,7 +62,7 @@ export class ExportedDataFileController {
         return stream;
     }
 
-    @Delete(':fileName')
+    @Delete()
     @ApiBearerAuth()
     @ApiBody({ type: IFileName })
     async deleteFile(
@@ -76,5 +76,21 @@ export class ExportedDataFileController {
             filePath
         );
         return { messages: responseMessage.success };
+    }
+
+    @Post('export_expenses')
+    @ApiBearerAuth()
+    @ApiBody({ type: IExportExpenses })
+    async export_expenses(@Req() req: Request, @Body() body: IExportExpenses) {
+        const fileName = await this.exportedDataFileService.exportExpensesToFile(
+            req.user['id'],
+            body.startDate ? new Date(body.startDate) : undefined,
+            body.endDate ? new Date(body.endDate) : undefined,
+            body.fileType || 'csv'
+        );
+
+        if (fileName) {
+            return { message: responseMessage.success, fileName: fileName };
+        }
     }
 }

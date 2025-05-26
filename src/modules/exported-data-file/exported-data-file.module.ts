@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ExportedDataFileController } from './exported-data-file.controller';
 import { ExportedDataFileService } from './exported-data-file.service';
 import { MulterModule } from '@nestjs/platform-express';
+import { ExpensesService } from '../expenses/expenses.service';
 
 @Module({
     imports: [
@@ -25,7 +26,7 @@ import { MulterModule } from '@nestjs/platform-express';
         })
     ],
     controllers: [ExportedDataFileController],
-    providers: [ExportedDataFileService],
+    providers: [ExportedDataFileService, ExpensesService],
     exports: [ExportedDataFileService]
 })
 export class ExportedDataFileModule {}

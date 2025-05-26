@@ -123,4 +123,23 @@ export class ExpensesService {
       data: { isDeleted: true },
     });
   }
+
+  async getExpensesAndCategoryNameByUserIdWithinTimeRange(userId: number, startDate: Date, endDate: Date) {
+    return await this.prisma.expense.findMany({
+      where: {
+        userId,
+        isDeleted: false,
+        date: {
+          gte: startDate ? getStartOfDay(startDate) : undefined,
+          lte: endDate ? getEndOfDay(endDate) : undefined,
+        },
+      },
+      include: {
+        category: {
+          select: { name: true },
+        }
+      },
+      omit: { id: true, userId: true, categoryId: true, createdAt: true, updatedAt: true, isDeleted: true },
+    });
+  }
 }

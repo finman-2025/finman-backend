@@ -1,5 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ExpenseType } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class IExportedDataFile {
   @ApiProperty()

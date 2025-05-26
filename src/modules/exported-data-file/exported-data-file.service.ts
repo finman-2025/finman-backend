@@ -1,12 +1,16 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 
 import * as fs from 'fs';
 import { promisify } from "util";
+import { createObjectCsvWriter } from 'csv-writer';
 
 import { Storage } from '@google-cloud/storage';
 
 import { PrismaService } from "src/config/db.config";
 import { collectionKey, messages, responseMessage } from "src/common/text";
+
+import { ExpensesService } from "../expenses/expenses.service";
+import * as path from "path";
 
 const unlinkAsync = promisify(fs.unlink);
 const fsReadFileAsync = promisify(fs.readFile);
@@ -19,6 +23,7 @@ export class ExportedDataFileService {
 
     constructor(
         private prisma: PrismaService,
+        private readonly expensesService: ExpensesService,
     ) {
         this.storage = new Storage({
             keyFilename: process.env.GOOGLE_JSON_KEY_PATH,
@@ -57,8 +62,7 @@ export class ExportedDataFileService {
 
             await unlinkAsync(filePath);
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-            return link;
+            return fileName;
         } catch (error) {
             console.error('uploadFile error:',error);
             throw new InternalServerErrorException('Failed to export data');
@@ -97,7 +101,7 @@ export class ExportedDataFileService {
         const files: any[] = [];
 
         const [objects] = await bucket.getFiles({
-            prefix: `${this.bucketPath}/${userId}/`,
+            prefix: `exported-date-files/${userId}/`,
         });
 
         for (const obj of objects) {
@@ -116,7 +120,7 @@ export class ExportedDataFileService {
             omit: { id: true, userId: true, createdAt: true, updatedAt: true }
         });
         if (!fileInfo) {
-            throw new InternalServerErrorException('File not found');
+            throw new NotFoundException(messages.notFound(collectionKey.exportedDataFile));
         }
 
         const bucket = this.storage.bucket(this.bucketName);
@@ -126,13 +130,67 @@ export class ExportedDataFileService {
 
             if (file) {
                 const fileBlob = bucket.file(filePath);
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return fileBlob.createReadStream();
             } else {
-                throw new InternalServerErrorException('File not found');
+                throw new NotFoundException(messages.notFound(collectionKey.exportedDataFile));
             }
         } catch (error) {
-            throw new InternalServerErrorException('Failed to fetch file');
+            throw new InternalServerErrorException(responseMessage.internalServerError);
         }
-      }
+    }
+
+    async exportExpensesToFile(
+        userId: number,
+        startDate: Date,
+        endDate: Date,
+        fileType: 'pdf' | 'csv',
+    ) {
+        const expensesData = await this.expensesService.getExpensesAndCategoryNameByUserIdWithinTimeRange(
+            userId,
+            startDate,
+            endDate
+        );
+
+        if (!expensesData || expensesData.length === 0) {
+            throw new NotFoundException(messages.notFound(collectionKey.expense));
+        }
+
+        const formatData = expensesData.map(expense => ({
+            date: expense.date.toISOString().replace('T', ' ').split('.')[0],
+            description: expense.description,
+            value: expense.value,
+            category: expense.category.name,
+            type: expense.type,
+        }));
+
+        const fileName = `expenses_${userId}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}.${fileType}`;
+        const filePath = path.resolve(`uploads/exported_data_files/${fileName}`);
+
+        if (fileType === 'csv') {
+            const csvWriter = createObjectCsvWriter({
+                path: path.resolve(filePath),
+                header: [
+                    { id: 'date', title: 'Date' },
+                    { id: 'description', title: 'Description' },
+                    { id: 'value', title: 'Value' },
+                    { id: 'category', title: 'Category' },
+                    { id: 'type', title: 'Type' },
+                ],
+            });
+
+            await csvWriter.writeRecords(formatData);
+            return await this.uploadFile(
+                userId,
+                path.resolve(filePath),
+                fileName,
+                'text/csv'
+            );
+        }
+        else if (fileType === 'pdf') {
+            // PDF generation logic would go here
+            throw new ServiceUnavailableException('PDF export is not implemented yet');
+        } else {
+            throw new BadRequestException('Unsupported file type');
+        }
+    }
 }
