@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+
 import { PrismaService } from 'src/config/db.config';
+
 import { CreateFinancialTipDto } from './dto';
 
 @Injectable()

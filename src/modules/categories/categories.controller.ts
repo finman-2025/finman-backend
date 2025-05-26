@@ -21,10 +21,19 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
+
 import { Request } from 'express';
 
-import { ExpenseType } from '@prisma/client';
 import { idSchema, ExceptionDto } from 'src/common/dto';
+import {
+  responseMessage,
+  messages,
+  summaries,
+  collectionKey,
+} from 'src/common/text';
+
+import { ZodValidationPipe } from 'src/pipes/validation.pipe';
+
 import {
   CreateCategoryDto,
   createCategorySchema,
@@ -41,14 +50,6 @@ import {
 } from './interfaces';
 
 import { CategoriesService } from './categories.service';
-import { ZodValidationPipe } from 'src/pipes/validation.pipe';
-
-import {
-  responseMessage,
-  messages,
-  summaries,
-  collectionKey,
-} from 'src/common/text';
 
 @Controller('categories')
 export class CategoriesController {
@@ -57,9 +58,12 @@ export class CategoriesController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: [ICategory] })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [ICategory]
+  })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   async getCategoryByUser(@Req() req: Request): Promise<ICategory[]> {
@@ -84,7 +88,7 @@ export class CategoriesController {
     type: [ICategoryAnalytics],
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   async getAnalytics(
@@ -93,7 +97,6 @@ export class CategoriesController {
   ): Promise<ICategoryAnalytics[]> {
     const { startDate, endDate } = query;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await this.categoriesService.findAllWithExpenseValue(
       req.user['id'],
       startDate,
@@ -104,7 +107,10 @@ export class CategoriesController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: ICategory
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
@@ -122,9 +128,12 @@ export class CategoriesController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: ICategory
+  })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiBody({ type: ICreateCategory })
@@ -145,16 +154,19 @@ export class CategoriesController {
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
-  @ApiBody({ type: IUpdateCategory })
-  @ApiOkResponse({ description: responseMessage.success, type: ICategory })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: ICategory
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
+  @ApiBody({ type: IUpdateCategory })
   async updateCategory(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
     @Body(new ZodValidationPipe(updateCategorySchema)) body: UpdateCategoryDto,
@@ -169,7 +181,10 @@ export class CategoriesController {
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
-  @ApiOkResponse({ description: responseMessage.success, type: Boolean })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: Boolean
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,

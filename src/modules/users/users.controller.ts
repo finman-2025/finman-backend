@@ -9,6 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiNotFoundResponse,
@@ -16,16 +17,17 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 
-import { idSchema, ExceptionDto } from 'src/common/dto';
 import { responseMessage, messages, summaries } from 'src/common/text/messages';
 import { collectionKey, fieldKey } from 'src/common/text/keywords';
+import { idSchema, ExceptionDto, IResponseMessage } from 'src/common/dto';
 import { nameSchema } from 'src/common/dto/name.dto';
+
+import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { UpdateUserDto, updateUserSchema } from './dto';
 import { IReturnUser, IUpdateUser } from './interfaces';
 
 import { UsersService } from './users.service';
-import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 @Controller('users')
 export class UsersController {
@@ -34,9 +36,16 @@ export class UsersController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnUser
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
     type: ExceptionDto,
   })
   async getUserById(
@@ -52,9 +61,16 @@ export class UsersController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getMany(collectionKey.user) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [IReturnUser]
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
   async getManyUsersBySearchString(
-    @Query('searchString', new ZodValidationPipe(nameSchema))
-    searchString: string,
+    @Query('searchString', new ZodValidationPipe(nameSchema)) searchString: string,
   ): Promise<IReturnUser[]> {
     const users =
       await this.usersService.findManyUsersBySearchString(searchString);
@@ -80,9 +96,16 @@ export class UsersController {
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnUser
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
     type: ExceptionDto,
   })
   @ApiBody({ type: IUpdateUser })
@@ -94,26 +117,32 @@ export class UsersController {
     if (!user) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
-    await this.usersService.updateOneById(id, body);
-    return user;
+    return await this.usersService.updateOneById(id, body);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.delete(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: Boolean })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.user),
     type: ExceptionDto,
   })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
+    type: ExceptionDto,
+  })
   async deleteUser(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
-  ): Promise<boolean> {
+  ): Promise<IResponseMessage> {
     const user = await this.usersService.findOneById(id);
     if (!user) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
     await this.usersService.deleteOneById(id);
-    return true;
+    return { message: responseMessage.success };
   }
 }

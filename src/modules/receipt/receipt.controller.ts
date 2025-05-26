@@ -7,7 +7,6 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -20,9 +19,9 @@ import { SkipJwtAuth } from 'src/annotations/skipAuth.annotation';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { responseMessage, summaries } from 'src/common/text';
+import { ExceptionDto } from 'src/common/dto';
 
 import { IReturnReceiptData } from './interfaces';
-import { ExceptionDto } from 'src/common/dto';
 import { uploadReceiptSchema } from './dto/upload-receipt.dto';
 
 import { ReceiptService } from './receipt.service';
@@ -39,7 +38,7 @@ export class ReceiptController {
     type: IReturnReceiptData,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiConsumes('multipart/form-data')

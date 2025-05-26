@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+
 import { PrismaService } from 'src/config/db.config';
 
-import { ExpenseType } from '@prisma/client';
-import type { CreateCategoryDto } from './dto';
-import { ExpensesService } from '../expenses/expenses.service';
-
 import { fieldKey, messages } from 'src/common/text';
+
+import type { CreateCategoryDto } from './dto';
+
+import { ExpensesService } from 'src/modules/expenses/expenses.service';
 
 @Injectable()
 export class CategoriesService {

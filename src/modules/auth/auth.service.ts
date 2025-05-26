@@ -11,11 +11,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 
-import { RegisterDto, TokensDto } from './dto';
 import { PrismaService } from 'src/config/db.config';
-import { UsersService } from '../users/users.service';
 
 import { fieldKey, messages, responseMessage } from 'src/common/text';
+
+import { RegisterDto, TokensDto } from './dto';
+
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -57,14 +59,27 @@ export class AuthService {
   async getTokens(id: number) {
     const payload = { sub: id };
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
-      }),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
-      }),
-    ]);
+    // const [accessToken, refreshToken] = await Promise.all([
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
+    //   }),
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
+    //   }),
+    // ]);
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
+    });
+
+    const refreshToken = randomBytes(
+      this.configService.get<number>('REFRESH_TOKEN_LENGTH'),
+    ).toString('hex');
+
+    if (!accessToken || !refreshToken)
+      throw new ServiceUnavailableException(
+        responseMessage.internalServerError,
+      );
 
     return new TokensDto(accessToken, refreshToken);
   }
@@ -90,15 +105,16 @@ export class AuthService {
       throw new ServiceUnavailableException(
         responseMessage.internalServerError,
       );
-
-    return true;
   }
 
   async login(user: any) {
     const tokens = await this.getTokens(user['id']);
 
     await this.prisma.refreshToken.create({
-      data: { token: tokens.refreshToken, userId: user['id'] },
+      data: {
+        token: tokens.refreshToken,
+        userId: user['id'] as number
+      },
     });
 
     return tokens;
@@ -119,9 +135,7 @@ export class AuthService {
 
       return new TokensDto(newAccessToken, refreshToken);
     } catch {
-      throw new ServiceUnavailableException(
-        responseMessage.internalServerError,
-      );
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
     }
   }
 

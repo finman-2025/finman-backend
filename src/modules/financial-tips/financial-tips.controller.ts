@@ -11,12 +11,12 @@ import {
 import { ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 import { collectionKey, messages } from 'src/common/text';
+import { idSchema, optionalTypeSchema } from 'src/common/dto';
+
+import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { ICreateFinancialTip } from './interfaces';
 import { CreateFinancialTipDto, createFinancialTipSchema } from './dto';
-import { idSchema, optionalTypeSchema, typeSchema } from 'src/common/dto';
-
-import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { FinancialTipsService } from './financial-tips.service';
 

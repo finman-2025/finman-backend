@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+
 import { PrismaService } from 'src/config/db.config';
+
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { IReturnUser, IUser } from './interfaces';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,7 @@ export class UsersService {
   }
 
   async findOneById(id: number) {
-    return await this.prisma.user.findFirst({
+    return await this.prisma.user.findUnique({
       where: { id: id, isDeleted: false },
       omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });

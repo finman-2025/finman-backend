@@ -1,10 +1,13 @@
 export const collectionKey = {
   user: 'Người dùng',
+  token: 'Token',
   category: 'Danh mục',
   expense: 'Chi tiêu',
   tips: 'Gợi ý',
-  token: 'Token',
-  exportedDataFile: 'Tệp dữ liệu đã xuất'
+  exportedDataFile: 'Tệp dữ liệu đã xuất',
+  notification: 'Thông báo',
+  chatSession: 'Phiên trò chuyện',
+  message: 'Tin nhắn',
 };
 
 export const fieldKey = {
@@ -23,23 +26,28 @@ export const fieldKey = {
   address: 'Địa chỉ',
   avatar: 'Avatar',
 
+  categoryId: 'Id danh mục',
   categoryName: 'Tên danh mục',
   limit: 'Hạn mức',
+
   value: 'Giá trị',
   description: 'Mô tả',
-  categoryId: 'Id danh mục',
+  date: 'Ngày',
+
   expenseType: 'Kiểu chi tiêu',
   other: 'Khác',
-  date: 'Ngày',
+
+  type: 'Thể loại',
+  
   author: 'Tác giả',
   authorImage: 'Ảnh tác giả',
   content: 'Nội dung',
   title: 'Tiêu đề',
-  type: 'Thể loại',
 
   file: 'File',
   fileType: 'Kiểu File',
   fileSize: 'Kích thước File',
+  url: 'Đường dẫn'
 };
 
 export const TokenType = {

@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+
 import * as vision from '@google-cloud/vision';
+
 import * as fs from 'fs';
 import { promisify } from 'util';
+
+import { responseMessage } from 'src/common/text';
 
 const unlinkAsync = promisify(fs.unlink);
 
@@ -35,7 +39,7 @@ export class ReceiptService {
       };
     } catch (error) {
       console.error('Error processing receipt:', error);
-      throw new Error('Failed to process receipt.');
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
     }
   }
 
@@ -128,7 +132,7 @@ export class ReceiptService {
           if (sellerMatch) {
             return sellerMatch[1].trim();
           }
-          // Nếu không có dấu ":" hoặc khoảng trắng, lấy dòng tiếp theo
+
           if (i + 1 < lines.length) {
             return lines[i + 1].trim();
           }

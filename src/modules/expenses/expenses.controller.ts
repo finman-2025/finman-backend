@@ -19,6 +19,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
+
 import { Request } from 'express';
 
 import {
@@ -30,13 +31,13 @@ import {
 import {
   ExceptionDto,
   idSchema,
+  IResponseMessage,
   optionalDateSchema,
   optionalIdSchema,
 } from 'src/common/dto';
 
-import { ExpensesService } from './expenses.service';
-import { CategoriesService } from '../categories/categories.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
+
 import {
   createExpenseSchema,
   updateExpenseSchema,
@@ -51,7 +52,9 @@ import {
   ITotalExpenseValue,
   IUpdateExpense,
 } from './interfaces';
-import { ExpenseType } from '@prisma/client';
+
+import { ExpensesService } from './expenses.service';
+import { CategoriesService } from 'src/modules/categories/categories.service';
 
 @Controller('expenses')
 export class ExpensesController {
@@ -143,7 +146,10 @@ export class ExpensesController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
@@ -161,9 +167,12 @@ export class ExpensesController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.create(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense
+  })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiBody({ type: ICreateExpense })
@@ -182,13 +191,16 @@ export class ExpensesController {
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiBody({ type: IUpdateExpense })
@@ -225,23 +237,26 @@ export class ExpensesController {
   @Delete()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.deleteMany(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage
+  })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   async deleteAllExpensesByUserId(
     @Query('categoryId', new ZodValidationPipe(idSchema)) categoryId: number,
-  ): Promise<boolean> {
+  ): Promise<IResponseMessage> {
     const category = await this.categoriesService.findOneById(categoryId);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));
     }
     await this.expensesService.deleteAllCategoryExpenses(categoryId);
-    return true;
+    return { message: responseMessage.success };
   }
 }
