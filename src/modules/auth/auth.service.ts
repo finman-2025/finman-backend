@@ -90,7 +90,9 @@ export class AuthService {
     const refreshTokenData = {
       token: tokens.refreshToken,
       userId: user['id'],
-      expiresAt: new Date(Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES')),
+      expiresAt: new Date(
+        Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
+      ),
     };
 
     await this.prisma.refreshToken.create({ data: refreshTokenData });
@@ -102,7 +104,8 @@ export class AuthService {
     const tokenData = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
     });
-    if (!tokenData || tokenData.expiresAt < new Date()) throw new Error('Invalid refresh token');
+    if (!tokenData || tokenData.expiresAt < new Date())
+      throw new Error('Invalid refresh token');
 
     const payload = await this.jwtService.verifyAsync(refreshToken);
 

@@ -47,6 +47,7 @@ lerna-debug.log*
 
 # multer folder
 /uploads
+google-cloud-api-key.json
 
 # temp directory
 .temp

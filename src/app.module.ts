@@ -33,7 +33,7 @@ import { ReceiptModule } from './modules/receipt/receipt.module';
     CategoriesModule,
     ExpensesModule,
     AuthModule,
-    ReceiptModule
+    ReceiptModule,
   ],
   controllers: [AppController],
   providers: [
