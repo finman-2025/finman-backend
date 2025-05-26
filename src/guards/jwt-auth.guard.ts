@@ -28,8 +28,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // Allow public endpoints to pass through without authentication
     const req = context.switchToHttp().getRequest();
     if (req.isPublic) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return user;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return super.handleRequest(err, user, info, context);
   }
 }

@@ -81,7 +81,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: responseMessage.badRequest })
   async profile(@Req() req: Request): Promise<IReturnUser> {
     const user = await this.userService.findOneById(req.user['id']);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(responseMessage.notFound(collectionKey.user));
     return user;
   }
 

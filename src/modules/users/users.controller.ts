@@ -18,7 +18,7 @@ import {
 
 import { idSchema, ExceptionDto } from 'src/common/dto';
 import { responseMessage, messages, summaries } from 'src/common/text/messages';
-import { collectionKey } from 'src/common/text/keywords';
+import { collectionKey, fieldKey } from 'src/common/text/keywords';
 import { nameSchema } from 'src/common/dto/name.dto';
 
 import { UpdateUserDto, updateUserSchema } from './dto';
@@ -36,7 +36,7 @@ export class UsersController {
   @ApiOperation({ summary: summaries.getOne(collectionKey.user) })
   @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
     type: ExceptionDto,
   })
   async getUserById(
@@ -82,7 +82,7 @@ export class UsersController {
   @ApiOperation({ summary: summaries.update(collectionKey.user) })
   @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
     type: ExceptionDto,
   })
   @ApiBody({ type: IUpdateUser })
@@ -103,7 +103,7 @@ export class UsersController {
   @ApiOperation({ summary: summaries.delete(collectionKey.user) })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
     type: ExceptionDto,
   })
   async deleteUser(
