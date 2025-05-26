@@ -21,11 +21,11 @@ export class ReceiptService {
       const [result] = await this.client.textDetection(filePath);
       const text = result.textAnnotations[0]?.description || '';
 
+      await unlinkAsync(filePath);
+
       const totalAmount = this.parseTotalAmount(text);
       const paymentTime = this.parsePaymentTime(text);
       const seller = this.parseSeller(text);
-
-      await unlinkAsync(filePath);
 
       // console.log('Raw text from receipt:', text);
       return {

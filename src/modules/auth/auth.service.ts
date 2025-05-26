@@ -57,26 +57,24 @@ export class AuthService {
   async getTokens(id: number) {
     const payload = { sub: id };
 
-    // const [accessToken, refreshToken] = await Promise.all([
-    //   this.jwtService.signAsync(payload, {
-    //     expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
-    //   }),
-    //   this.jwtService.signAsync(payload, {
-    //     expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
-    //   }),
-    // ]);
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
-    });
-    const refreshToken = randomBytes(64).toString('hex');
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
+      }),
+      this.jwtService.signAsync(payload, {
+        expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
+      }),
+    ]);
 
     return new TokensDto(accessToken, refreshToken);
   }
 
   async register(dto: RegisterDto) {
     const userExists = await this.usersService.findOneByUsername(dto.username);
-    if (userExists) throw new ConflictException(responseMessage.alreadyExists(fieldKey.username));
+    if (userExists)
+      throw new ConflictException(
+        responseMessage.alreadyExists(fieldKey.username),
+      );
 
     const hash = await this.hashPassword(dto.password);
     const user = await this.prisma.user.create({
@@ -88,23 +86,19 @@ export class AuthService {
       },
     });
 
-    if (!user) throw new ServiceUnavailableException(responseMessage.internalServerError);
+    if (!user)
+      throw new ServiceUnavailableException(
+        responseMessage.internalServerError,
+      );
 
     return true;
   }
 
   async login(user: any) {
     const tokens = await this.getTokens(user['id']);
-    const now  = new Date();
 
     await this.prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
-        userId: user['id'],
-        expiresAt: new Date(
-          now.getTime() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
-        ),
-      },
+      data: { token: tokens.refreshToken, userId: user['id'] },
     });
 
     return tokens;
@@ -120,12 +114,14 @@ export class AuthService {
     try {
       const newAccessToken = await this.jwtService.signAsync(
         { sub: tokenData.userId },
-        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000 },
+        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') },
       );
 
       return new TokensDto(newAccessToken, refreshToken);
     } catch {
-      throw new ServiceUnavailableException(responseMessage.internalServerError);
+      throw new ServiceUnavailableException(
+        responseMessage.internalServerError,
+      );
     }
   }
 
