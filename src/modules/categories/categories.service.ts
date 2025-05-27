@@ -1,9 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 
 import { PrismaService } from 'src/config/db.config';
 
 import { fieldKey, messages } from 'src/common/text';
 
+import { ExpenseType } from '@prisma/client';
 import type { CreateCategoryDto } from './dto';
 
 import { ExpensesService } from 'src/modules/expenses/expenses.service';
@@ -12,6 +18,7 @@ import { ExpensesService } from 'src/modules/expenses/expenses.service';
 export class CategoriesService {
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => ExpensesService))
     private expensesService: ExpensesService,
   ) {}
 
@@ -33,11 +40,16 @@ export class CategoriesService {
   ) {
     const categories = await this.prisma.category.findMany({
       where: { userId, isDeleted: false },
-      select: { id: true, name: true, limit: true },
+      select: { id: true, name: true, limit: true, type: true },
       orderBy: { id: 'asc' },
     });
 
-    categories.push({ id: 0, name: fieldKey.other, limit: undefined });
+    categories.push({
+      id: 0,
+      name: fieldKey.other,
+      limit: undefined,
+      type: undefined,
+    });
 
     return Promise.all(
       categories.map(async (category) => {
@@ -69,7 +81,13 @@ export class CategoriesService {
     }
 
     return await this.prisma.category.create({
-      data: { name: data.name, limit: data.limit, image: data.image, userId },
+      data: {
+        name: data.name,
+        limit: data.type === ExpenseType.OUTCOME ? data.limit : undefined,
+        type: data.type,
+        image: data.image,
+        userId,
+      },
       omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
   }

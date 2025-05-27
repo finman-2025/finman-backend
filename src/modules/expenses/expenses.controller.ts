@@ -148,7 +148,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.getOne(collectionKey.expense) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IReturnExpense
+    type: IReturnExpense,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.expense),
@@ -169,7 +169,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.create(collectionKey.expense) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IReturnExpense
+    type: IReturnExpense,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
@@ -193,7 +193,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.update(collectionKey.expense) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IReturnExpense
+    type: IReturnExpense,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.expense),
@@ -208,11 +208,7 @@ export class ExpensesController {
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
     @Body(new ZodValidationPipe(updateExpenseSchema)) body: UpdateExpenseDto,
   ): Promise<IReturnExpense> {
-    const expense = await this.expensesService.updateOneById(id, body);
-    if (!expense) {
-      throw new NotFoundException(messages.notFound(collectionKey.expense));
-    }
-    return expense;
+    return await this.expensesService.updateOneById(id, body);
   }
 
   @Delete(':id')
@@ -239,7 +235,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.deleteMany(collectionKey.expense) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IResponseMessage
+    type: IResponseMessage,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),

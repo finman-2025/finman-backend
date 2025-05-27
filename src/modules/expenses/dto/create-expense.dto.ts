@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { ExpenseType } from '@prisma/client';
 
-import { messages, fieldKey } from 'src/common/text';
+import { messages, fieldKey, collectionKey } from 'src/common/text';
 import { nameRegex } from 'src/common/utils';
 
 export const createExpenseSchema = z.object({
@@ -22,8 +22,7 @@ export const createExpenseSchema = z.object({
     .int(messages.invalid(fieldKey.value))
     .positive(messages.invalid(fieldKey.value)),
   description: z
-    .string({ message: messages.missing(fieldKey.description) })
-    .regex(nameRegex, { message: messages.invalid(fieldKey.description) })
+    .string()
     .transform((value) => (value ? value.trim() : undefined))
     .optional(),
   date: z

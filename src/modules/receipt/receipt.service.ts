@@ -39,7 +39,9 @@ export class ReceiptService {
       };
     } catch (error) {
       console.error('Error processing receipt:', error);
-      throw new ServiceUnavailableException(responseMessage.internalServerError);
+      throw new ServiceUnavailableException(
+        responseMessage.internalServerError,
+      );
     }
   }
 
@@ -67,8 +69,6 @@ export class ReceiptService {
 
     const dateStr = match[0];
     if (!dateStr) return null;
-
-    console.log(dateStr);
 
     let datePart = '',
       monthPart = '',

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
-import { messages, fieldKey } from 'src/common/text';
+import { ExpenseType } from '@prisma/client';
 
+import { messages, fieldKey, collectionKey } from 'src/common/text';
 import { nameRegex, uppercaseFirstLetter } from 'src/common/utils';
 
 export const createCategorySchema = z.object({
@@ -15,6 +16,12 @@ export const createCategorySchema = z.object({
     .int(messages.invalid(fieldKey.limit))
     .positive(messages.invalid(fieldKey.limit))
     .optional(),
+  type: z.preprocess(
+    (value) => value?.toString()?.toUpperCase(),
+    z.nativeEnum(ExpenseType, {
+      message: messages.invalid(fieldKey.expenseType, collectionKey.category),
+    }),
+  ),
   image: z
     .string()
     .transform((value) => (value ? value.trim() : undefined))

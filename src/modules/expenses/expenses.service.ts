@@ -1,16 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from 'src/config/db.config';
-
-import { getEndOfDay, getStartOfDay } from 'src/common/utils';
-
-import { CreateExpenseDto, UpdateExpenseDto } from './dto';
+import { CategoriesService } from 'src/modules/categories/categories.service';
 
 import { ExpenseType } from '@prisma/client';
+import { CreateExpenseDto, UpdateExpenseDto } from './dto';
+
+import {
+  collectionKey,
+  fieldKey,
+  messages,
+  responseMessage,
+} from 'src/common/text';
+import { getEndOfDay, getStartOfDay } from 'src/common/utils';
 
 @Injectable()
 export class ExpensesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => CategoriesService))
+    private categoriesService: CategoriesService,
+  ) {}
 
   async findMany(userId: number, categoryId?: number, date?: Date) {
     return await this.prisma.expense.findMany({
@@ -45,10 +61,22 @@ export class ExpensesService {
   }
 
   async createOne(data: CreateExpenseDto) {
+    let type = data.type;
+    if (data.categoryId) {
+      const category = await this.categoriesService.findOneById(
+        data.categoryId,
+      );
+      if (!category)
+        throw new NotFoundException(
+          responseMessage.notFound(collectionKey.category),
+        );
+      type = category.type;
+    }
+
     return await this.prisma.expense.create({
       data: {
         userId: data.userId,
-        type: data.type,
+        type,
         value: data.value,
         description: data.description,
         date: data.date,
@@ -94,14 +122,46 @@ export class ExpensesService {
   }
 
   async updateOneById(id: number, data: UpdateExpenseDto) {
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, isDeleted: false },
+      select: { categoryId: true },
+    });
+    if (!expense)
+      throw new NotFoundException(
+        responseMessage.notFound(collectionKey.expense),
+      );
+
+    if (data.categoryId) {
+      const updateCategory = await this.categoriesService.findOneById(
+        data.categoryId,
+      );
+      if (!updateCategory)
+        throw new NotFoundException(
+          responseMessage.notFound(collectionKey.category),
+        );
+      if (expense.categoryId && expense.categoryId !== data.categoryId) {
+        const category = await this.categoriesService.findOneById(
+          expense.categoryId,
+        );
+        if (!category)
+          throw new NotFoundException(
+            responseMessage.notFound(collectionKey.category),
+          );
+        if (category.type !== updateCategory.type) {
+          throw new BadRequestException(
+            messages.cannotUpdate(fieldKey.expenseType, collectionKey.expense),
+          );
+        }
+      }
+    }
+
     return await this.prisma.expense.update({
       where: { id, isDeleted: false },
       data: {
         value: data.value,
-        type: data.type,
         description: data.description,
         date: data.date,
-        categoryId: data.categoryId,
+        categoryId: data.categoryId === 0 ? null : data.categoryId,
       },
       include: {
         category: {
@@ -127,7 +187,11 @@ export class ExpensesService {
     });
   }
 
-  async getExpensesAndCategoryNameByUserIdWithinTimeRange(userId: number, startDate: Date, endDate: Date) {
+  async getExpensesAndCategoryNameByUserIdWithinTimeRange(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+  ) {
     return await this.prisma.expense.findMany({
       where: {
         userId,
@@ -140,9 +204,16 @@ export class ExpensesService {
       include: {
         category: {
           select: { name: true },
-        }
+        },
       },
-      omit: { id: true, userId: true, categoryId: true, createdAt: true, updatedAt: true, isDeleted: true },
+      omit: {
+        id: true,
+        userId: true,
+        categoryId: true,
+        createdAt: true,
+        updatedAt: true,
+        isDeleted: true,
+      },
     });
   }
 }

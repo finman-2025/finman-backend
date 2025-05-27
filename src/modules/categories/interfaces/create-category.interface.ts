@@ -5,4 +5,5 @@ export class ICreateCategory extends PickType(ICategory, [
   'name',
   'limit',
   'image',
+  'type',
 ]) {}

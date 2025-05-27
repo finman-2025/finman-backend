@@ -60,7 +60,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: [ICategory]
+    type: [ICategory],
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
@@ -109,7 +109,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: ICategory
+    type: ICategory,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
@@ -130,7 +130,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: ICategory
+    type: ICategory,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
@@ -156,7 +156,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: ICategory
+    type: ICategory,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),
@@ -183,7 +183,7 @@ export class CategoriesController {
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: Boolean
+    type: Boolean,
   })
   @ApiNotFoundResponse({
     description: responseMessage.notFound(collectionKey.category),

@@ -13,6 +13,7 @@ export class ICategoryAnalytics extends PickType(ICategory, [
   'id',
   'name',
   'limit',
+  'type',
 ]) {
   @ApiProperty({ type: IExpenseValue })
   expenseValue: IExpenseValue;
