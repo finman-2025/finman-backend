@@ -140,14 +140,10 @@ export class ExpensesService {
           responseMessage.notFound(collectionKey.category),
         );
       if (expense.categoryId && expense.categoryId !== data.categoryId) {
-        const category = await this.categoriesService.findOneById(
+        const currentCategory = await this.categoriesService.findOneById(
           expense.categoryId,
         );
-        if (!category)
-          throw new NotFoundException(
-            responseMessage.notFound(collectionKey.category),
-          );
-        if (category.type !== updateCategory.type) {
+        if (currentCategory.type !== updateCategory.type) {
           throw new BadRequestException(
             messages.cannotUpdate(fieldKey.expenseType, collectionKey.expense),
           );

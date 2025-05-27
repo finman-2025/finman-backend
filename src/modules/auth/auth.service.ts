@@ -60,14 +60,24 @@ export class AuthService {
   async getTokens(id: number) {
     const payload = { sub: id };
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
-      }),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES'),
-      }),
-    ]);
+    // const [accessToken, refreshToken] = await Promise.all([
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
+    //   }),
+    //   this.jwtService.signAsync(payload, {
+    //     expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
+    //   }),
+    // ]);
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
+    });
+
+    let refreshTokenLength: number = this.configService.get<number>(
+      'REFRESH_TOKEN_LENGTH',
+    );
+    refreshTokenLength = Number(refreshTokenLength);
+    const refreshToken = randomBytes(refreshTokenLength).toString('hex');
 
     if (!accessToken || !refreshToken)
       throw new ServiceUnavailableException(
@@ -107,6 +117,10 @@ export class AuthService {
       data: {
         token: tokens.refreshToken,
         userId: user['id'] as number,
+        expiresAt: new Date(
+          Date.now() +
+            this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+        ),
       },
     });
 
@@ -123,8 +137,11 @@ export class AuthService {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken);
       const newAccessToken = await this.jwtService.signAsync(
-        { sub: payload.sub },
-        { expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES') },
+        { sub: tokenData.userId },
+        {
+          expiresIn:
+            this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
+        },
       );
 
       return new TokensDto(newAccessToken, refreshToken);
