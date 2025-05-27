@@ -14,7 +14,7 @@ import { randomBytes } from 'crypto';
 
 import { PrismaService } from 'src/config/db.config';
 
-import { fieldKey, messages, responseMessage } from 'src/common/text';
+import { collectionKey, fieldKey, messages, responseMessage } from 'src/common/text';
 
 import { RegisterDto, TokensDto } from './dto';
 
@@ -27,7 +27,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async hashPassword(password: string): Promise<string> {
     return argon2.hash(password);
@@ -57,17 +57,8 @@ export class AuthService {
     };
   }
 
-  async getTokens(id: number) {
-    const payload = { sub: id };
-
-    // const [accessToken, refreshToken] = await Promise.all([
-    //   this.jwtService.signAsync(payload, {
-    //     expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
-    //   }),
-    //   this.jwtService.signAsync(payload, {
-    //     expiresIn: this.configService.get<number>('REFRESH_TOKEN_EXPIRES'),
-    //   }),
-    // ]);
+  async getTokens(userId: number): Promise<TokensDto> {
+    const payload = { sub: userId };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
@@ -80,9 +71,7 @@ export class AuthService {
     const refreshToken = randomBytes(refreshTokenLength).toString('hex');
 
     if (!accessToken || !refreshToken)
-      throw new ServiceUnavailableException(
-        responseMessage.internalServerError,
-      );
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
 
     return new TokensDto(accessToken, refreshToken);
   }
@@ -95,19 +84,16 @@ export class AuthService {
       );
 
     const hash = await this.hashPassword(data.password);
-    const user = await this.prisma.user.create({
+
+    await this.prisma.user.create({
       data: {
         username: data.username,
         password: hash,
         email: data.email,
         name: data.name,
       },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
-
-    if (!user)
-      throw new ServiceUnavailableException(
-        responseMessage.internalServerError,
-      );
   }
 
   async login(user: any) {
@@ -119,7 +105,7 @@ export class AuthService {
         userId: user['id'] as number,
         expiresAt: new Date(
           Date.now() +
-            this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+          this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
         ),
       },
     });
@@ -132,10 +118,9 @@ export class AuthService {
       where: { token: refreshToken },
     });
     if (!tokenData)
-      throw new BadRequestException(messages.missing(fieldKey.refreshToken));
+      throw new UnauthorizedException(responseMessage.sectionExpired);
 
     try {
-      const payload = await this.jwtService.verifyAsync(refreshToken);
       const newAccessToken = await this.jwtService.signAsync(
         { sub: tokenData.userId },
         {
@@ -146,7 +131,7 @@ export class AuthService {
 
       return new TokensDto(newAccessToken, refreshToken);
     } catch {
-      throw new UnauthorizedException(responseMessage.sectionExpired);
+      throw new ServiceUnavailableException(responseMessage.internalServerError);
     }
   }
 
@@ -154,5 +139,22 @@ export class AuthService {
     await this.prisma.refreshToken.deleteMany({
       where: { userId: userId },
     });
+  }
+
+  async changePassword(
+    username: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.usersService.findOneByUsername(username);
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    const valid = await this.verifyPassword(user.password, oldPassword);
+    if (!valid)
+      throw new BadRequestException(responseMessage.passwordDoesNotMatch);
+
+    const hash = await this.hashPassword(newPassword);
+    await this.usersService.updatePassword(user.id, hash);
   }
 }
