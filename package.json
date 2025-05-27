@@ -18,7 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org nguyen-thanh-nhan --project finman ./dist && sentry-cli sourcemaps upload --org nguyen-thanh-nhan --project finman ./dist"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
@@ -33,6 +34,8 @@
     "@nestjs/swagger": "^11.1.5",
     "@nestjs/typeorm": "^11.0.0",
     "@prisma/client": "^6.6.0",
+    "@sentry/cli": "^2.46.0",
+    "@sentry/nestjs": "^9.22.0",
     "@types/multer": "^1.4.12",
     "argon2": "^0.43.0",
     "bcrypt": "^5.1.1",
