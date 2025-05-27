@@ -14,4 +14,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get("/debug-sentry")
+  @SkipJwtAuth()
+  getError() {
+    throw new Error("My first Sentry error!");
+  }
 }
