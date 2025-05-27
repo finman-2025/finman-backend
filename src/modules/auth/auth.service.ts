@@ -69,12 +69,12 @@ export class AuthService {
     // ]);
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES'),
+      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
     });
 
-    const refreshToken = randomBytes(
-      this.configService.get<number>('REFRESH_TOKEN_LENGTH'),
-    ).toString('hex');
+    let refreshTokenLength: number = this.configService.get<number>('REFRESH_TOKEN_LENGTH');
+    refreshTokenLength = Number(refreshTokenLength);
+    const refreshToken = randomBytes(refreshTokenLength).toString('hex');
 
     if (!accessToken || !refreshToken)
       throw new ServiceUnavailableException(
@@ -113,7 +113,10 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         token: tokens.refreshToken,
-        userId: user['id'] as number
+        userId: user['id'] as number,
+        expiresAt: new Date(
+          Date.now() + this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+        ),
       },
     });
 
@@ -130,7 +133,7 @@ export class AuthService {
     try {
       const newAccessToken = await this.jwtService.signAsync(
         { sub: tokenData.userId },
-        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') },
+        { expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000 },
       );
 
       return new TokensDto(newAccessToken, refreshToken);
