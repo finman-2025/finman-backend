@@ -11,7 +11,10 @@ import { allowedImageSize, allowedImageTypes } from 'src/common/utils';
 
 @Injectable()
 export class MulterConfigService implements MulterOptionsFactory {
-  constructor(private readonly folder: string) {}
+  constructor(
+    private readonly folder: string,
+    private allowedFileType: string[],
+  ) {}
 
   createMulterOptions(): MulterModuleOptions {
     return {
@@ -35,7 +38,7 @@ export class MulterConfigService implements MulterOptionsFactory {
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (allowedImageTypes.includes(file.mimetype)) cb(null, true);
+        if (this.allowedFileType.includes(file.mimetype)) cb(null, true);
         else
           cb(
             new BadRequestException(

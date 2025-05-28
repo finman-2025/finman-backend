@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ExpenseType } from '@prisma/client';
 import { fieldKey, messages, responseMessage } from 'src/common/text';
 
 export const getSpentSchema = z

@@ -114,7 +114,7 @@ model FinancialTip {
   author      String
   authorImage String?
   date        DateTime @default(now())
-  type        String
+  type        String?
   content     String
 
   createdAt DateTime @default(now())

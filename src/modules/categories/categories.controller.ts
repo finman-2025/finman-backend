@@ -22,6 +22,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -112,6 +113,7 @@ export class CategoriesController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
+  @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({
     description: responseMessage.success,
     type: ICategory,
