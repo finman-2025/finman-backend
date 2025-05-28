@@ -35,7 +35,7 @@ import { nameSchema } from 'src/common/dto/name.dto';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import { UpdateUserDto, updateUserSchema } from './dto';
-import { IReturnUser, IUpdateUser } from './interfaces';
+import { IAvatarUrl, IReturnUser, IUpdateUser } from './interfaces';
 
 import { UsersService } from './users.service';
 
@@ -48,7 +48,7 @@ export class UsersController {
   @ApiOperation({ summary: summaries.update(collectionKey.user, fieldKey.avatar) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: string
+    type: IAvatarUrl
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(fieldKey.file),
@@ -71,17 +71,18 @@ export class UsersController {
   async updateAvatar(
     @Req() req: Request,
     @UploadedFile() file: Express.Multer.File
-  ): Promise<string> {
+  ): Promise<IAvatarUrl> {
     if (!file)
       throw new BadRequestException(responseMessage.badRequest(fieldKey.file));
 
     const fileName = `${Date.now()}-${file.originalname}`;
-    return await this.usersService.updateAvatar(
+    const publicUrl = await this.usersService.updateAvatar(
       req.user['id'],
       file.path,
       fileName,
       file.mimetype
     );
+    return { avatar: publicUrl };
   }
 
   @Delete('avatar')

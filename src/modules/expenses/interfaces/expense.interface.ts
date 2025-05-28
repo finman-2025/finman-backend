@@ -22,14 +22,4 @@ export class IExpense {
 
   @ApiProperty()
   categoryId: number;
-
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
-
-  @ApiProperty()
-  isDeleted: boolean;
 }

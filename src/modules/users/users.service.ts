@@ -150,7 +150,14 @@ export class UsersService {
       if (!user.avatar || user.avatar === '')
         throw new NotFoundException(responseMessage.notFound(fieldKey.avatar));
     
-      fileName = user.avatar.split('/').pop().split('?')[0];
+      fileName = user.avatar.split('%2F').pop();
+      if (!fileName)
+        fileName = user.avatar.split('/').pop().split('?')[0];
+    }
+    else {
+      fileName = fileName.split('%2F').pop();
+      if (!fileName)
+        fileName = fileName.split('/').pop().split('?')[0];
     }
 
     const cloudFilePath = this.cloudStorageService.getCloudFilePath(
