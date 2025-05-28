@@ -1,15 +1,12 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   NotImplementedException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 
-import * as fs from 'fs';
-import { promisify } from 'util';
 import { createObjectCsvWriter } from 'csv-writer';
+import * as path from 'path';
 
 import { Storage } from '@google-cloud/storage';
 
@@ -17,15 +14,11 @@ import { PrismaService } from 'src/config/db.config';
 import {
   collectionKey,
   fieldKey,
-  messages,
   responseMessage,
 } from 'src/common/text';
 
 import { ExpensesService } from '../expenses/expenses.service';
-import * as path from 'path';
-
-const unlinkAsync = promisify(fs.unlink);
-const fsReadFileAsync = promisify(fs.readFile);
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 
 @Injectable()
 export class ExportedDataFileService {
@@ -37,38 +30,24 @@ export class ExportedDataFileService {
   constructor(
     private prisma: PrismaService,
     private readonly expensesService: ExpensesService,
-  ) {
-    this.storage = new Storage({
-      keyFilename: process.env.GOOGLE_JSON_KEY_PATH,
-      projectId: process.env.GOOGLE_PROJECT_ID,
-    });
-    this.bucketName = process.env.GOOGLE_STORAGE_BUCKET_NAME;
-  }
+    private readonly cloudStorageService: CloudStorageService,
+  ) {}
 
   async uploadFile(
     userId: number,
-    filePath: string,
+    localFilePath: string,
     fileName: string,
     fileType: string,
   ) {
-    const file = await fsReadFileAsync(filePath);
-    if (!file)
-      throw new InternalServerErrorException(
-        responseMessage.notFound(fieldKey.file),
-      );
+    const cloudFilePath = `${this.bucketFolderName}/${userId}/${fileName}`;
 
-    const bucket = this.storage.bucket(this.bucketName);
-    const destination = `${this.bucketFolderName}/${userId}/${fileName}`;
-    const gcsFile = bucket.file(destination);
+    const link = await this.cloudStorageService.uploadFile(
+      localFilePath,
+      cloudFilePath,
+      fileType,
+    );
 
-    await gcsFile.save(file, {
-      metadata: {
-        contentType: fileType,
-      },
-    });
-    const link = gcsFile.publicUrl();
-
-    await this.prisma.exportedDataFile.create({
+    return await this.prisma.exportedDataFile.create({
       data: {
         userId: userId,
         fileName: fileName,
@@ -76,15 +55,9 @@ export class ExportedDataFileService {
         url: link,
       },
     });
-
-    await unlinkAsync(filePath);
-
-    return fileName;
   }
 
   async deleteFile(userId: number, fileName: string): Promise<void> {
-    const filePath = this.getFileUrl(userId, fileName);
-
     const fileExists = await this.prisma.exportedDataFile.findFirst({
       where: { userId, fileName, isDeleted: false },
       omit: { createdAt: true, updatedAt: true, isDeleted: true },
@@ -93,11 +66,13 @@ export class ExportedDataFileService {
       throw new NotFoundException(
         responseMessage.notFound(collectionKey.exportedDataFile),
       );
-
-    // await this.storage.bucket(this.bucketName).file(filePath).delete();
-    // await this.prisma.exportedDataFile.delete({
-    //     where: { id: fileExists.id },
-    // });
+  
+    // const cloudFilePath = this.cloudStorageService.getCloudFilePath(
+    //   this.bucketFolderName,
+    //   userId,
+    //   fileName,
+    // );
+    // await this.cloudStorageService.deleteFile(cloudFilePath);
 
     // Soft delete
     await this.prisma.exportedDataFile.update({
@@ -106,53 +81,17 @@ export class ExportedDataFileService {
     });
   }
 
-  getFileUrl(userId: number, fileName: string): string {
-    return `${this.bucketFolderName}/${userId}/${fileName}`;
-  }
-
   async listUserExportedFiles(userId: number) {
     const fileInfos = await this.prisma.exportedDataFile.findMany({
       where: { userId, isDeleted: false },
-      omit: {
-        id: true,
-        userId: true,
+      select: {
+        fileName: true,
+        url: true,
         createdAt: true,
-        updatedAt: true,
-        isDeleted: true,
       },
     });
 
     return fileInfos;
-  }
-
-  async fetchUserExportedFile(
-    userId: number,
-    fileName: string,
-  ): Promise<NodeJS.ReadableStream> {
-    const fileInfo = await this.prisma.exportedDataFile.findFirst({
-      where: {
-        userId: userId,
-        fileName: fileName,
-      },
-      omit: { id: true, userId: true, createdAt: true, updatedAt: true },
-    });
-    if (!fileInfo)
-      throw new NotFoundException(
-        responseMessage.notFound(collectionKey.exportedDataFile),
-      );
-
-    const bucket = this.storage.bucket(this.bucketName);
-    const filePath = this.getFileUrl(userId, fileName);
-
-    const [file] = await bucket.file(filePath).exists();
-
-    if (!file)
-      throw new NotFoundException(
-        responseMessage.notFound(collectionKey.exportedDataFile),
-      );
-
-    const fileBlob = bucket.file(filePath);
-    return fileBlob.createReadStream();
   }
 
   async exportExpensesToFile(
@@ -182,11 +121,11 @@ export class ExportedDataFileService {
     }));
 
     const fileName = `expenses_${userId}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}.${fileType}`;
-    const filePath = path.resolve(`${this.multerFolderName}/${fileName}`);
+    const localFilePath = path.resolve(`${this.multerFolderName}/${fileName}`);
 
     if (fileType === 'csv') {
       const csvWriter = createObjectCsvWriter({
-        path: path.resolve(filePath),
+        path: path.resolve(localFilePath),
         header: [
           { id: 'date', title: 'Date' },
           { id: 'description', title: 'Description' },
@@ -197,13 +136,21 @@ export class ExportedDataFileService {
       });
 
       await csvWriter.writeRecords(formatData);
-      return await this.uploadFile(
+
+      const fileDoc = await this.uploadFile(
         userId,
-        path.resolve(filePath),
+        localFilePath,
         fileName,
         'text/csv',
       );
-    } else if (fileType === 'pdf') {
+
+      return {
+        fileName: fileName,
+        url: fileDoc.url,
+        createdAt: fileDoc.createdAt,
+      };
+
+    } else if (fileType.includes('pdf')) {
       // PDF generation logic would go here
       throw new NotImplementedException(responseMessage.notImplemented);
     } else {

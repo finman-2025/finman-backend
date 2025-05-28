@@ -15,6 +15,7 @@ import { responseMessage } from 'src/common/text';
 export class AppExceptionsFilter implements ExceptionFilter {
   @SentryExceptionCaptured()
   catch(exception: any, host: ArgumentsHost): void {
+    console.error('Exception caught by AppExceptionsFilter:', exception);
     const ctx = host.switchToHttp();
     const httpStatus =
       exception instanceof HttpException

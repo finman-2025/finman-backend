@@ -15,4 +15,7 @@ export class IExportedDataFile {
 
   @ApiProperty()
   url: string;
+
+  @ApiProperty()
+  createdAt: Date;
 }

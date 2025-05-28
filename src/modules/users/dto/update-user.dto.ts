@@ -29,14 +29,13 @@ export const updateUserSchema = z.object({
       .optional(),
   ),
   dateOfBirth: z
-    .string({ message: messages.missing(fieldKey.dateOfBirth) })
-    .nonempty(messages.missing(fieldKey.dateOfBirth))
-    .datetime(messages.invalid(fieldKey.dateOfBirth))
+    .string()
+    .date(messages.invalid(fieldKey.date))
+    .transform((value) => new Date(value))
     .optional(),
   address: z
     .string({ message: messages.missing(fieldKey.address) })
     .nonempty(messages.missing(fieldKey.address))
-    .regex(nameRegex, { message: messages.invalid(fieldKey.address) })
     .transform((value) => value.trim())
     .optional(),
 });

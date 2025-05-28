@@ -30,4 +30,13 @@ export class IUser {
 
   @ApiPropertyOptional()
   avatar: string;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+
+  @ApiProperty()
+  isDeleted: boolean;
 }

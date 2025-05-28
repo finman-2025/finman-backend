@@ -7,11 +7,11 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';
 
-import { allowedImageSize, allowedImageTypes } from 'src/common/utils';
+import { allowedFileSize, allowedFileTypes, allowedImageSize, allowedImageTypes } from 'src/common/utils';
 
 @Injectable()
 export class MulterConfigService implements MulterOptionsFactory {
-  constructor(private readonly folder: string) {}
+  constructor(private readonly folder: string, private readonly isImage: boolean) {}
 
   createMulterOptions(): MulterModuleOptions {
     return {
@@ -35,16 +35,28 @@ export class MulterConfigService implements MulterOptionsFactory {
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (allowedImageTypes.includes(file.mimetype)) cb(null, true);
-        else
-          cb(
-            new BadRequestException(
-              'Invalid file type. Only JPG, JPEG, PNG allowed.',
-            ),
-            false,
-          );
+        if (this.isImage) {
+          if (allowedImageTypes.includes(file.mimetype)) cb(null, true);
+          else 
+            cb(
+              new BadRequestException(
+                'Invalid image file type. Only JPG, JPEG, PNG allowed.',
+              ),
+              false,
+            );
+        }
+        else {
+          if (allowedFileTypes.includes(file.mimetype)) cb(null, true);
+          else
+            cb(
+              new BadRequestException(
+                'Invalid file type. Only CSV allowed.',
+              ),
+              false,
+            );
+        }
       },
-      limits: { fileSize: allowedImageSize },
+      limits: { fileSize: this.isImage ? allowedImageSize : allowedFileSize },
     };
   }
 }

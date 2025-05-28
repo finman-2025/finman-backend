@@ -44,7 +44,7 @@ export const summaries = {
   create: (collection: string) =>
     `Tạo một ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'} mới`,
   update: (collection: string, field?: string) =>
-    `Cập nhật ${field ? field.toLocaleLowerCase() : 'một trường'} của ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
+    `Cập nhật ${field ? field.toLocaleLowerCase() + ' của ' : ''} ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   delete: (collection: string) =>
     `Xóa một ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   deleteMany: (collection: string) =>

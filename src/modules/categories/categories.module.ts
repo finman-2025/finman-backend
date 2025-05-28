@@ -14,7 +14,7 @@ import { CloudStorageModule } from '../cloud-storage/cloud-storage.module';
   imports: [
     forwardRef(() => ExpensesModule),
     MulterModule.register(
-      new MulterConfigService('categories').createMulterOptions(),
+      new MulterConfigService('categories', true).createMulterOptions(),
     ),
     CloudStorageModule,
   ],

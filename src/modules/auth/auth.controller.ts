@@ -50,7 +50,7 @@ import { UsersService } from '../users/users.service';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly userService: UsersService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Post('register')
@@ -119,9 +119,11 @@ export class AuthController {
     type: ExceptionDto
   })
   async profile(@Req() req: Request): Promise<IReturnUser> {
-    const user = await this.userService.findOneById(req.user['id']);
-    if (!user) throw new NotFoundException(responseMessage.notFound(collectionKey.user));
-    return user;
+    const user = await this.usersService.findOneById(req.user['id']);
+    if (!user) 
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    return this.usersService.extractProfileData(user);
   }
 
   @Post('logout')

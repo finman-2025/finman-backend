@@ -2,7 +2,7 @@ import { PickType } from '@nestjs/swagger';
 import { IUser } from './user.interface';
 
 export class IReturnUser extends PickType(IUser, [
-    'id',
+    'username',
     'name',
     'email',
     'phoneNumber',
