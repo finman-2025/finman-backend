@@ -18,7 +18,12 @@ import {
 
 import { Request } from 'express';
 
-import { collectionKey, responseMessage, summaries } from 'src/common/text';
+import {
+  collectionKey,
+  fieldKey,
+  responseMessage,
+  summaries
+} from 'src/common/text';
 import { ExceptionDto, IResponseMessage } from 'src/common/dto';
 
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
@@ -26,9 +31,17 @@ import { LocalAuthGuard } from 'src/guards/local-auth.guard';
 import { SkipJwtAuth } from 'src/annotations/skipAuth.annotation';
 
 import { CreateUserDto, createUserSchema } from 'src/modules/users/dto';
-import { LoginDto, loginSchema, TokensDto, RefreshDto, refreshSchema } from './dto';
+import {
+  LoginDto,
+  loginSchema,
+  TokensDto,
+  RefreshDto,
+  refreshSchema,
+  ChangePasswordDto,
+  changePasswordSchema
+} from './dto';
 import { ICreateUser, IReturnUser } from 'src/modules/users/interfaces';
-import { ILogin, IRefresh } from './interfaces';
+import { IChangePassword, ILogin, IRefresh } from './interfaces';
 
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -124,6 +137,28 @@ export class AuthController {
   })
   async logout(@Req() req: Request): Promise<IResponseMessage> {
     await this.authService.logout(req.user['id']);
+    return { message: responseMessage.success };
+  }
+
+  @Post('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.update(collectionKey.user, fieldKey.password) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(),
+    type: ExceptionDto
+  })
+  @ApiBody({ type: IChangePassword })
+  @UsePipes(new ZodValidationPipe(changePasswordSchema))
+  async changePassword(@Body() body: ChangePasswordDto): Promise<IResponseMessage> {
+    await this.authService.changePassword(
+      body.username,
+      body.oldPassword,
+      body.newPassword,
+    );
     return { message: responseMessage.success };
   }
 }

@@ -5,13 +5,16 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+
+import { SentryExceptionCaptured } from '@sentry/nestjs';
+
 import { ExceptionDto } from 'src/common/dto';
 import { responseMessage } from 'src/common/text';
 
 @Catch()
 export class AppExceptionsFilter implements ExceptionFilter {
+  @SentryExceptionCaptured()
   catch(exception: any, host: ArgumentsHost): void {
-    console.log('exception.filter.ts[14]: ', exception);
     const ctx = host.switchToHttp();
     const httpStatus =
       exception instanceof HttpException

@@ -7,15 +7,22 @@ import {
   NotFoundException,
   Body,
   Query,
+  Req,
+  Put,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { ReadableStream } from 'node:stream/web';
 
 import { responseMessage, messages, summaries } from 'src/common/text/messages';
 import { collectionKey, fieldKey } from 'src/common/text/keywords';
@@ -28,6 +35,8 @@ import { UpdateUserDto, updateUserSchema } from './dto';
 import { IReturnUser, IUpdateUser } from './interfaces';
 
 import { UsersService } from './users.service';
+import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -52,9 +61,9 @@ export class UsersController {
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
   ): Promise<IReturnUser> {
     const user = await this.usersService.findOneById(id);
-    if (!user) {
+    if (!user)
       throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
+
     return user;
   }
 
@@ -114,9 +123,9 @@ export class UsersController {
     @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserDto,
   ): Promise<IReturnUser> {
     const user = await this.usersService.findOneById(id);
-    if (!user) {
+    if (!user)
       throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
+
     return await this.usersService.updateOneById(id, body);
   }
 
@@ -139,10 +148,86 @@ export class UsersController {
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
   ): Promise<IResponseMessage> {
     const user = await this.usersService.findOneById(id);
-    if (!user) {
+    if (!user)
       throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
+
     await this.usersService.deleteOneById(id);
     return { message: responseMessage.success };
   }
+
+  @Get('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getOne(fieldKey.avatar) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: ReadableStream,
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(fieldKey.avatar),
+    type: ExceptionDto,
+  })
+  async getAvatar(
+    @Req() req: Request
+  ): Promise<NodeJS.ReadableStream> {
+    return await this.usersService.getAvatar(req.user['id']);
+  }
+
+  @Put('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.update(fieldKey.avatar) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.file),
+    type: ExceptionDto,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+      schema: {
+          type: 'object',
+          properties: {
+              file: {
+                  type: 'string',
+                  format: 'binary',
+                  description: 'Upload a file (JPEG, PNG, max 5MB)',
+              },
+          },
+      },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAvatar(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File
+  ): Promise<IResponseMessage> {
+    if (!file)
+      throw new BadRequestException(responseMessage.badRequest(fieldKey.file));
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    await this.usersService.updateAvatar(
+      req.user['id'],
+      file.path,
+      fileName,
+      file.mimetype
+    );
+
+    return { message: responseMessage.success };
+  }
+
+  @Delete('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.delete(fieldKey.avatar) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(fieldKey.avatar),
+    type: ExceptionDto,
+  })
+  async deleteAvatar(@Req() req: Request): Promise<IResponseMessage> {
+    await this.usersService.deleteAvatar(req.user['id']);
+    return { message: responseMessage.success };
+  } 
 }

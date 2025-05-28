@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  NotImplementedException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 
@@ -13,7 +14,12 @@ import { createObjectCsvWriter } from 'csv-writer';
 import { Storage } from '@google-cloud/storage';
 
 import { PrismaService } from 'src/config/db.config';
-import { collectionKey, messages, responseMessage } from 'src/common/text';
+import {
+  collectionKey,
+  fieldKey,
+  messages,
+  responseMessage,
+} from 'src/common/text';
 
 import { ExpensesService } from '../expenses/expenses.service';
 import * as path from 'path';
@@ -25,19 +31,18 @@ const fsReadFileAsync = promisify(fs.readFile);
 export class ExportedDataFileService {
   private readonly storage: Storage;
   private readonly bucketName: string;
-  private readonly bucketPath: string;
+  private readonly bucketFolderName = 'exported_data_files';
+  private readonly multerFolderName = 'uploads/exported_data_files';
 
   constructor(
     private prisma: PrismaService,
     private readonly expensesService: ExpensesService,
   ) {
     this.storage = new Storage({
-      keyFilename:
-        process.env.GOOGLE_JSON_KEY_PATH || './certs/google-cloud-api-key.json',
+      keyFilename: process.env.GOOGLE_JSON_KEY_PATH,
       projectId: process.env.GOOGLE_PROJECT_ID,
     });
     this.bucketName = process.env.GOOGLE_STORAGE_BUCKET_NAME;
-    this.bucketPath = process.env.GOOGLE_STORAGE_BUCKET_PATH;
   }
 
   async uploadFile(
@@ -46,89 +51,78 @@ export class ExportedDataFileService {
     fileName: string,
     fileType: string,
   ) {
-    try {
-      const file = await fsReadFileAsync(filePath);
-      if (!file) {
-        throw new InternalServerErrorException(
-          responseMessage.internalServerError,
-        );
-      }
+    const file = await fsReadFileAsync(filePath);
+    if (!file)
+      throw new InternalServerErrorException(
+        responseMessage.notFound(fieldKey.file),
+      );
 
-      const bucket = this.storage.bucket(this.bucketName);
-      const destination = `exported_data_files/${userId}/${fileName}`;
-      const gcsFile = bucket.file(destination);
+    const bucket = this.storage.bucket(this.bucketName);
+    const destination = `${this.bucketFolderName}/${userId}/${fileName}`;
+    const gcsFile = bucket.file(destination);
 
-      await gcsFile.save(file, {
-        metadata: {
-          contentType: fileType,
-        },
-      });
-      const link = gcsFile.publicUrl();
+    await gcsFile.save(file, {
+      metadata: {
+        contentType: fileType,
+      },
+    });
+    const link = gcsFile.publicUrl();
 
-      await this.prisma.exportedDataFile.create({
-        data: {
-          userId: userId,
-          fileName: fileName,
-          fileType: fileType,
-          url: link,
-        },
-      });
+    await this.prisma.exportedDataFile.create({
+      data: {
+        userId: userId,
+        fileName: fileName,
+        fileType: fileType,
+        url: link,
+      },
+    });
 
-      await unlinkAsync(filePath);
+    await unlinkAsync(filePath);
 
-      return fileName;
-    } catch (error) {
-      console.error('uploadFile error:', error);
-      throw new InternalServerErrorException('Failed to export data');
-    }
+    return fileName;
   }
 
-  async deleteFile(
-    userId: number,
-    fileName: string,
-    filePath: string,
-  ): Promise<void> {
-    const fileExists = await this.prisma.exportedDataFile.findFirst({
-      where: { userId, fileName },
-      omit: { createdAt: true, updatedAt: true },
-    });
-    if (!fileExists) {
-      throw new NotFoundException(
-        messages.notFound(collectionKey.exportedDataFile),
-      );
-    }
+  async deleteFile(userId: number, fileName: string): Promise<void> {
+    const filePath = this.getFileUrl(userId, fileName);
 
-    await this.storage.bucket(this.bucketName).file(filePath).delete();
-    await this.prisma.exportedDataFile.delete({
+    const fileExists = await this.prisma.exportedDataFile.findFirst({
+      where: { userId, fileName, isDeleted: false },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+    });
+    if (!fileExists)
+      throw new NotFoundException(
+        responseMessage.notFound(collectionKey.exportedDataFile),
+      );
+
+    // await this.storage.bucket(this.bucketName).file(filePath).delete();
+    // await this.prisma.exportedDataFile.delete({
+    //     where: { id: fileExists.id },
+    // });
+
+    // Soft delete
+    await this.prisma.exportedDataFile.update({
       where: { id: fileExists.id },
+      data: { isDeleted: true },
     });
   }
 
   getFileUrl(userId: number, fileName: string): string {
-    return `exported_data_files/${userId}/${fileName}`;
+    return `${this.bucketFolderName}/${userId}/${fileName}`;
   }
 
-  async listUserExportedFiles(userId: number): Promise<any> {
+  async listUserExportedFiles(userId: number) {
     const fileInfos = await this.prisma.exportedDataFile.findMany({
-      where: { userId },
-      omit: { id: true, userId: true, createdAt: true, updatedAt: true },
-    });
-    if (!fileInfos) {
-      return [];
-    }
-
-    const bucket = this.storage.bucket(this.bucketName);
-    const files: any[] = [];
-
-    const [objects] = await bucket.getFiles({
-      prefix: `exported-date-files/${userId}/`,
+      where: { userId, isDeleted: false },
+      omit: {
+        id: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+        isDeleted: true,
+      },
     });
 
-    for (const obj of objects) {
-      files.push({ name: obj.name, baseUrl: obj.baseUrl });
-    }
-
-    return files;
+    return fileInfos;
   }
 
   async fetchUserExportedFile(
@@ -142,30 +136,23 @@ export class ExportedDataFileService {
       },
       omit: { id: true, userId: true, createdAt: true, updatedAt: true },
     });
-    if (!fileInfo) {
+    if (!fileInfo)
       throw new NotFoundException(
-        messages.notFound(collectionKey.exportedDataFile),
+        responseMessage.notFound(collectionKey.exportedDataFile),
       );
-    }
 
     const bucket = this.storage.bucket(this.bucketName);
     const filePath = this.getFileUrl(userId, fileName);
-    try {
-      const [file] = await bucket.file(filePath).exists();
 
-      if (file) {
-        const fileBlob = bucket.file(filePath);
-        return fileBlob.createReadStream();
-      } else {
-        throw new NotFoundException(
-          messages.notFound(collectionKey.exportedDataFile),
-        );
-      }
-    } catch (error) {
-      throw new InternalServerErrorException(
-        responseMessage.internalServerError,
+    const [file] = await bucket.file(filePath).exists();
+
+    if (!file)
+      throw new NotFoundException(
+        responseMessage.notFound(collectionKey.exportedDataFile),
       );
-    }
+
+    const fileBlob = bucket.file(filePath);
+    return fileBlob.createReadStream();
   }
 
   async exportExpensesToFile(
@@ -181,9 +168,10 @@ export class ExportedDataFileService {
         endDate,
       );
 
-    if (!expensesData || expensesData.length === 0) {
-      throw new NotFoundException(messages.notFound(collectionKey.expense));
-    }
+    if (!expensesData || expensesData.length === 0)
+      throw new NotFoundException(
+        responseMessage.notFound(collectionKey.expense),
+      );
 
     const formatData = expensesData.map((expense) => ({
       date: expense.date.toISOString().replace('T', ' ').split('.')[0],
@@ -194,7 +182,7 @@ export class ExportedDataFileService {
     }));
 
     const fileName = `expenses_${userId}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}.${fileType}`;
-    const filePath = path.resolve(`uploads/exported_data_files/${fileName}`);
+    const filePath = path.resolve(`${this.multerFolderName}/${fileName}`);
 
     if (fileType === 'csv') {
       const csvWriter = createObjectCsvWriter({
@@ -217,11 +205,11 @@ export class ExportedDataFileService {
       );
     } else if (fileType === 'pdf') {
       // PDF generation logic would go here
-      throw new ServiceUnavailableException(
-        'PDF export is not implemented yet',
-      );
+      throw new NotImplementedException(responseMessage.notImplemented);
     } else {
-      throw new BadRequestException('Unsupported file type');
+      throw new BadRequestException(
+        responseMessage.badRequest(fieldKey.fileType),
+      );
     }
   }
 }

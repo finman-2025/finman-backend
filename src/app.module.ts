@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
+
 import config from './config/app.config';
 import { DatabaseModule } from './config/db.config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -27,6 +29,7 @@ import { ReceiptModule } from './modules/receipt/receipt.module';
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ load: [config], isGlobal: true }),
     ScheduleModule.forRoot(),
     HttpModule,
@@ -48,6 +51,10 @@ import { ReceiptModule } from './modules/receipt/receipt.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    // {
+    //   provide: APP_FILTER,
+    //   useClass: SentryGlobalFilter,
+    // },
     {
       provide: APP_FILTER,
       useClass: AppExceptionsFilter,

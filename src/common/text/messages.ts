@@ -9,8 +9,11 @@ export const responseMessage = {
   overSpent: (field?: string) =>
     `Bạn đã chi tiêu${field ? ` cho ${field.toLocaleLowerCase()}` : ''} quá hạn mức tháng này, hãy điều chỉnh chi tiêu hợp lý`,
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
+  passwordDoesNotMatch: 'Mật khẩu không khớp',
   sectionExpired: 'Phiên đăng nhập hết hạn',
   startDateBeforeEndDate: 'Ngày bắt đầu phải trước ngày kết thúc',
+  notImplemented: 'Chức năng này chưa được triển khai',
+  serviceUnavailable: 'Dịch vụ không khả dụng',
 };
 
 export const messages = {
@@ -31,20 +34,21 @@ export const messages = {
 
 export const summaries = {
   getOne: (collection: string) =>
-    `Lấy thông tin một ${collection.toLocaleLowerCase()}`,
+    `Lấy thông tin một ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   getMany: (collection: string) =>
-    `Lấy danh sách các ${collection.toLocaleLowerCase()}`,
+    `Lấy danh sách các ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   getTotal: (collection: string) =>
-    `Lấy tổng ${collection.toLocaleLowerCase()}`,
+    `Lấy tổng ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   getList: (collection: string) =>
-    `Lấy danh sách ${collection.toLocaleLowerCase()}`,
+    `Lấy danh sách ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   create: (collection: string) =>
-    `Tạo một ${collection.toLocaleLowerCase()} mới`,
-  update: (collection: string) =>
-    `Cập nhật một ${collection.toLocaleLowerCase()}`,
-  delete: (collection: string) => `Xóa một ${collection.toLocaleLowerCase()}`,
+    `Tạo một ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'} mới`,
+  update: (collection: string, field?: string) =>
+    `Cập nhật ${field ? field.toLocaleLowerCase() : 'một trường'} của ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
+  delete: (collection: string) =>
+    `Xóa một ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   deleteMany: (collection: string) =>
-    `Xóa nhiều ${collection.toLocaleLowerCase()}`,
+    `Xóa nhiều ${collection ? collection.toLocaleLowerCase() : 'hàng dữ liệu'}`,
   getAnalytics: () => 'Lấy phân tích',
   login: () => 'Đăng nhập',
   register: () => 'Đăng ký',
@@ -52,4 +56,6 @@ export const summaries = {
   logout: () => 'Đăng xuất',
   profile: () => 'Thông tin tài khoản',
   uploadReceipt: () => `Tải ảnh biên lai lên`,
+  exportExpenses: () => 'Xuất dữ liệu chi tiêu',
+  uploadFile: () => 'Tải tệp lên',
 };

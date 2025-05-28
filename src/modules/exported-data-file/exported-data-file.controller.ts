@@ -1,12 +1,38 @@
-import { Body, Controller, Delete, Get, InternalServerErrorException, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiParam } from "@nestjs/swagger";
+import {
+    Controller,
+    Get,
+    Post,
+    Delete,
+    Req,
+    Param,
+    Body,
+    BadRequestException,
+    UploadedFile,
+    UseInterceptors,
+    UsePipes,
+    NotFoundException,
+} from "@nestjs/common";
+import {
+    ApiBadRequestResponse,
+    ApiBearerAuth,
+    ApiBody,
+    ApiConsumes,
+    ApiNotFoundResponse,
+    ApiOkResponse,
+    ApiOperation,
+    ApiParam
+} from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ReadableStream } from "node:stream/web";
 
 import { Request } from "express";
 
 import { ExportedDataFileService } from "./exported-data-file.service";
 import { IFileName, IExportExpenses } from "./interfaces";
-import { responseMessage } from "src/common/text";
+import { collectionKey, fieldKey, responseMessage, summaries } from "src/common/text";
+import { ExceptionDto, IResponseMessage } from "src/common/dto";
+import { ExportExpensesDto, exportExpensesSchema, FileNameDto, fileNameSchema } from "./dto";
+import { ZodValidationPipe } from "src/pipes/validation.pipe";
 
 @Controller('exported_data_file')
 export class ExportedDataFileController {
@@ -35,9 +61,9 @@ export class ExportedDataFileController {
         @UploadedFile() file: Express.Multer.File
     ) {
         console.log('File uploaded:', file);
-        if (!file) {
-            throw new InternalServerErrorException('No file uploaded or file is invalid');
-        }
+        if (!file)
+            throw new BadRequestException(responseMessage.badRequest(fieldKey.file));
+
         const fileName = `${Date.now()}-${file.originalname}`;
         const fileUrl = await this.exportedDataFileService.uploadFile(
             req.user['id'],
@@ -50,10 +76,24 @@ export class ExportedDataFileController {
 
     @Get(':fileName')
     @ApiBearerAuth()
-    @ApiParam({ name: 'fileName', type: String, description: 'Name of the file to retrieve' })
+    @ApiOperation({ summary: summaries.getOne(collectionKey.exportedDataFile) })
+    @ApiOkResponse({
+        description: responseMessage.success,
+        type: ReadableStream,
+    })
+    @ApiNotFoundResponse({
+        description: responseMessage.notFound(collectionKey.exportedDataFile),
+        type: ExceptionDto,
+    })
+    @ApiBadRequestResponse({
+        description: responseMessage.badRequest(fieldKey.fileName),
+        type: ExceptionDto,
+    })
+    @ApiParam({ name: 'fileName', type: IFileName, description: 'Name of the file to retrieve' })
+    @UsePipes(new ZodValidationPipe(fileNameSchema))
     async getFile(
         @Req() req: Request,
-        @Param() param: { fileName: string } 
+        @Param('fileName') param: FileNameDto
     ) {
         const stream = await this.exportedDataFileService.fetchUserExportedFile(
             req.user['id'],
@@ -62,26 +102,72 @@ export class ExportedDataFileController {
         return stream;
     }
 
+    @Get()
+    @ApiBearerAuth()
+    @ApiOperation({ summary: summaries.getMany(collectionKey.exportedDataFile) })
+    @ApiOkResponse({
+        description: responseMessage.success,
+        type: [IFileName],
+    })
+    @ApiNotFoundResponse({
+        description: responseMessage.notFound(collectionKey.exportedDataFile),
+        type: ExceptionDto,
+    })
+    async getAllFiles(
+        @Req() req: Request
+    ): Promise<IFileName[]> {
+        const files = await this.exportedDataFileService.listUserExportedFiles(req.user['id']);
+        if (!files || files.length === 0)
+            throw new NotFoundException(responseMessage.notFound(collectionKey.exportedDataFile));
+
+        return files.map(file => ({ fileName: file.fileName }));
+    }
+
     @Delete()
     @ApiBearerAuth()
+    @ApiOperation({ summary: summaries.delete(collectionKey.exportedDataFile) })
+    @ApiOkResponse({
+        description: responseMessage.success,
+        type: IResponseMessage,
+    })
+    @ApiBadRequestResponse({
+        description: responseMessage.badRequest(fieldKey.fileName),
+        type: ExceptionDto,
+    })
+    @ApiNotFoundResponse({
+        description: responseMessage.notFound(collectionKey.exportedDataFile),
+        type: ExceptionDto,
+    })
     @ApiBody({ type: IFileName })
+    @UsePipes(new ZodValidationPipe(fileNameSchema))
     async deleteFile(
         @Req() req: Request,
         @Body() body: IFileName
     ) {
-        const filePath = this.exportedDataFileService.getFileUrl(req.user['id'], body.fileName);
         await this.exportedDataFileService.deleteFile(
             req.user['id'],
-            body.fileName,
-            filePath
+            body.fileName
         );
         return { messages: responseMessage.success };
     }
 
     @Post('export_expenses')
     @ApiBearerAuth()
+    @ApiOperation({ summary: summaries.exportExpenses() })
+    @ApiOkResponse({
+        description: responseMessage.success,
+        type: IFileName,
+    })
+    @ApiBadRequestResponse({
+        description: responseMessage.badRequest(fieldKey.fileType),
+        type: ExceptionDto,
+    })
     @ApiBody({ type: IExportExpenses })
-    async export_expenses(@Req() req: Request, @Body() body: IExportExpenses) {
+    @UsePipes(new ZodValidationPipe(exportExpensesSchema))
+    async export_expenses(
+        @Req() req: Request,
+        @Body() body: ExportExpensesDto
+    ): Promise<IFileName> {
         const fileName = await this.exportedDataFileService.exportExpensesToFile(
             req.user['id'],
             body.startDate ? new Date(body.startDate) : undefined,
@@ -89,8 +175,7 @@ export class ExportedDataFileController {
             body.fileType || 'csv'
         );
 
-        if (fileName) {
-            return { message: responseMessage.success, fileName: fileName };
-        }
+        if (fileName)
+            return { fileName: fileName };
     }
 }

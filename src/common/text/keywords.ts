@@ -45,6 +45,7 @@ export const fieldKey = {
   title: 'Tiêu đề',
 
   file: 'File',
+  fileName: 'Tên File',
   fileType: 'Kiểu File',
   fileSize: 'Kích thước File',
   url: 'Đường dẫn'
