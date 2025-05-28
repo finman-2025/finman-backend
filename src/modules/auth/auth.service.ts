@@ -14,7 +14,12 @@ import { randomBytes } from 'crypto';
 
 import { PrismaService } from 'src/config/db.config';
 
-import { fieldKey, messages, responseMessage } from 'src/common/text';
+import {
+  collectionKey,
+  fieldKey,
+  messages,
+  responseMessage,
+} from 'src/common/text';
 
 import { RegisterDto, TokensDto } from './dto';
 
@@ -51,6 +56,10 @@ export class AuthService {
 
   async validateAccessTokenPayload(payload: any) {
     const user = await this.usersService.findOneById(payload.sub);
+    if (!user)
+      throw new UnauthorizedException(
+        responseMessage.notFound(collectionKey.user),
+      );
     return {
       id: user.id,
       username: user.username,
@@ -73,9 +82,8 @@ export class AuthService {
       expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
     });
 
-    let refreshTokenLength: number = this.configService.get<number>(
-      'REFRESH_TOKEN_LENGTH',
-    );
+    let refreshTokenLength: number =
+      this.configService.get<number>('REFRESH_TOKEN_LENGTH') || 6;
     refreshTokenLength = Number(refreshTokenLength);
     const refreshToken = randomBytes(refreshTokenLength).toString('hex');
 
@@ -135,7 +143,6 @@ export class AuthService {
       throw new BadRequestException(messages.missing(fieldKey.refreshToken));
 
     try {
-      const payload = await this.jwtService.verifyAsync(refreshToken);
       const newAccessToken = await this.jwtService.signAsync(
         { sub: tokenData.userId },
         {

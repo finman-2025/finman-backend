@@ -18,7 +18,12 @@ import {
   messages,
   responseMessage,
 } from 'src/common/text';
-import { getEndOfDay, getStartOfDay } from 'src/common/utils';
+import {
+  getEndOfDay,
+  getFirstDateOfMonth,
+  getLastDateOfMonth,
+  getStartOfDay,
+} from 'src/common/utils';
 
 @Injectable()
 export class ExpensesService {
@@ -62,6 +67,7 @@ export class ExpensesService {
 
   async createOne(data: CreateExpenseDto) {
     let type = data.type;
+    let message = null;
     if (data.categoryId) {
       const category = await this.categoriesService.findOneById(
         data.categoryId,
@@ -71,16 +77,28 @@ export class ExpensesService {
           responseMessage.notFound(collectionKey.category),
         );
       type = category.type;
+
+      if (category.type === ExpenseType.OUTCOME) {
+        const { spent } = await this.getTotalExpenseValue(
+          data.userId,
+          data.categoryId,
+          getFirstDateOfMonth(data.date),
+          getLastDateOfMonth(data.date),
+        );
+
+        if (category.limit && spent + data.value > category.limit)
+          message = responseMessage.overSpent(category.name);
+      }
     }
 
-    return await this.prisma.expense.create({
+    const expense = await this.prisma.expense.create({
       data: {
         userId: data.userId,
         type,
         value: data.value,
         description: data.description,
         date: data.date,
-        categoryId: data.categoryId,
+        categoryId: data.categoryId || undefined,
       },
       include: {
         category: {
@@ -89,6 +107,8 @@ export class ExpensesService {
       },
       omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
+
+    return message ? { message } : expense;
   }
 
   async getTotalExpenseValue(

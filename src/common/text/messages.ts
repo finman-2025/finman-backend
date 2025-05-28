@@ -6,6 +6,8 @@ export const responseMessage = {
   notFound: (field?: string) =>
     `Không tìm thấy ${field ? field.toLocaleLowerCase() : 'dữ liệu'}`,
   alreadyExists: (field?: string) => `${field ? field : 'Dữ liệu'} đã tồn tại`,
+  overSpent: (field?: string) =>
+    `Bạn đã chi tiêu${field ? ` cho ${field.toLocaleLowerCase()}` : ''} quá hạn mức tháng này, hãy điều chỉnh chi tiêu hợp lý`,
   wrongUsernameOrPassword: 'Sai tên đăng nhập hoặc mật khẩu',
   sectionExpired: 'Phiên đăng nhập hết hạn',
   startDateBeforeEndDate: 'Ngày bắt đầu phải trước ngày kết thúc',

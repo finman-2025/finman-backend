@@ -12,9 +12,11 @@ export const createCategorySchema = z.object({
     .regex(nameRegex, { message: messages.invalid(fieldKey.categoryName) })
     .transform((value) => uppercaseFirstLetter(value.trim())),
   limit: z
-    .number()
-    .int(messages.invalid(fieldKey.limit))
-    .positive(messages.invalid(fieldKey.limit))
+    .string()
+    .transform((value) => (value ? Number(value.trim()) : undefined))
+    .refine((value) => value === undefined || !isNaN(value) || value > 0, {
+      message: messages.invalid(fieldKey.limit),
+    })
     .optional(),
   type: z.preprocess(
     (value) => value?.toString()?.toUpperCase(),

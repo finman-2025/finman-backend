@@ -42,7 +42,7 @@ lerna-debug.log*
 /uploads
 
 # keys
-/certs/*
+/certs
 
 # dotenv environment variable files
 .env

@@ -11,6 +11,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { AppExceptionsFilter } from './filters/exceptions.filter';
 import { PostInterceptor } from './interceptors/post.interceptor';
 
+import { CloudStorageModule } from './modules/cloud-storage/cloud-storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -30,6 +31,7 @@ import { ReceiptModule } from './modules/receipt/receipt.module';
     ScheduleModule.forRoot(),
     HttpModule,
     DatabaseModule,
+    CloudStorageModule,
     UsersModule,
     CategoriesModule,
     ExpensesModule,

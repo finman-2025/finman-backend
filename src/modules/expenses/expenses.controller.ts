@@ -36,6 +36,7 @@ import {
   optionalIdSchema,
 } from 'src/common/dto';
 
+import { ExpenseType } from '@prisma/client';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import {
@@ -179,12 +180,9 @@ export class ExpensesController {
   async createExpense(
     @Req() req: Request,
     @Body(new ZodValidationPipe(createExpenseSchema)) body: CreateExpenseDto,
-  ): Promise<IReturnExpense> {
+  ): Promise<IReturnExpense | { message: string }> {
     body.userId = req.user['id'];
     const expense = await this.expensesService.createOne(body);
-    if (!expense) {
-      throw new NotFoundException(messages.notFound(collectionKey.expense));
-    }
     return expense;
   }
 

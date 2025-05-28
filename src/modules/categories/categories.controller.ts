@@ -11,16 +11,20 @@ import {
   Delete,
   Req,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import { Request } from 'express';
 
@@ -32,6 +36,7 @@ import {
   collectionKey,
 } from 'src/common/text';
 
+import { ExpenseType } from '@prisma/client';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import {
@@ -136,13 +141,19 @@ export class CategoriesController {
     description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('image'))
   @ApiBody({ type: ICreateCategory })
-  @UsePipes(new ZodValidationPipe(createCategorySchema))
   async createCategory(
     @Req() req: Request,
-    @Body() body: CreateCategoryDto,
+    @Body(new ZodValidationPipe(createCategorySchema)) body: CreateCategoryDto,
+    @UploadedFile() image?: Express.Multer.File,
   ): Promise<ICategory> {
-    const category = await this.categoriesService.create(body, req.user['id']);
+    const category = await this.categoriesService.create(
+      body,
+      req.user['id'],
+      image,
+    );
     if (!category) {
       throw new InternalServerErrorException(
         responseMessage.internalServerError,

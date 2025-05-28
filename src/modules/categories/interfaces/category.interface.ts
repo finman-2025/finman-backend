@@ -8,11 +8,8 @@ export class ICategory {
   @ApiProperty()
   name: string;
 
-  @ApiPropertyOptional({
-    enum: ExpenseType,
-    description: `type: ${ExpenseType.INCOME} | ${ExpenseType.OUTCOME}`,
-  })
-  type?: ExpenseType;
+  @ApiPropertyOptional({ enum: ExpenseType })
+  type: ExpenseType;
 
   @ApiPropertyOptional()
   image?: string;

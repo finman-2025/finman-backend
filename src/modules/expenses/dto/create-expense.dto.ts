@@ -2,8 +2,7 @@ import { z } from 'zod';
 
 import { ExpenseType } from '@prisma/client';
 
-import { messages, fieldKey, collectionKey } from 'src/common/text';
-import { nameRegex } from 'src/common/utils';
+import { messages, fieldKey } from 'src/common/text';
 
 export const createExpenseSchema = z.object({
   userId: z
@@ -32,7 +31,6 @@ export const createExpenseSchema = z.object({
   categoryId: z
     .number({ message: messages.missing(fieldKey.categoryId) })
     .int(messages.invalid(fieldKey.categoryId))
-    .positive(messages.invalid(fieldKey.categoryId))
     .optional(),
 });
 

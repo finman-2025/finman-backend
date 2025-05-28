@@ -13,6 +13,7 @@ import { ExpenseType } from '@prisma/client';
 import type { CreateCategoryDto } from './dto';
 
 import { ExpensesService } from 'src/modules/expenses/expenses.service';
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 
 @Injectable()
 export class CategoriesService {
@@ -20,6 +21,7 @@ export class CategoriesService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ExpensesService))
     private expensesService: ExpensesService,
+    private cloudStorageService: CloudStorageService,
   ) {}
 
   async findAll(userId: number) {
@@ -30,7 +32,7 @@ export class CategoriesService {
       omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },
     });
 
-    return [...categories, { id: 0, name: fieldKey.other }];
+    return [...categories, { id: 0, name: fieldKey.other, type: undefined }];
   }
 
   async findAllWithExpenseValue(
@@ -71,7 +73,11 @@ export class CategoriesService {
     });
   }
 
-  async create(data: CreateCategoryDto, userId: number) {
+  async create(
+    data: CreateCategoryDto,
+    userId: number,
+    image?: Express.Multer.File,
+  ) {
     const category = await this.prisma.category.findFirst({
       where: { name: data.name, userId, isDeleted: false },
     });
@@ -79,6 +85,20 @@ export class CategoriesService {
     if (category) {
       throw new BadRequestException(messages.nameExists(fieldKey.categoryName));
     }
+
+    if (image) {
+      const fileName = `${Date.now()}-${image.originalname}`;
+      const link = await this.cloudStorageService.uploadFile(
+        image.path,
+        this.cloudStorageService.getCloudFilePath(
+          'categories',
+          userId,
+          fileName,
+        ),
+        image.mimetype,
+      );
+      data.image = link;
+    } else data.image = undefined;
 
     return await this.prisma.category.create({
       data: {
