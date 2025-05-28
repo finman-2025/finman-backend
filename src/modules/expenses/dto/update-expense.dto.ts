@@ -19,6 +19,7 @@ export const updateExpenseSchema = z.object({
     .string({ message: messages.missing(fieldKey.date) })
     .nonempty(messages.missing(fieldKey.date))
     .datetime(messages.invalid(fieldKey.date))
+    .transform((value) => new Date(value))
     .optional(),
   categoryId: z
     .number({ message: messages.missing(fieldKey.categoryId) })

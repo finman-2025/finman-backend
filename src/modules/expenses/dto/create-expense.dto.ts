@@ -11,6 +11,7 @@ export const createExpenseSchema = z.object({
     .positive(messages.invalid(fieldKey.userId))
     .optional(),
   type: z.preprocess(
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     (value) => value?.toString()?.toUpperCase(),
     z.nativeEnum(ExpenseType, {
       message: messages.invalid(fieldKey.expenseType),
@@ -27,7 +28,8 @@ export const createExpenseSchema = z.object({
   date: z
     .string({ message: messages.missing(fieldKey.date) })
     .nonempty(messages.missing(fieldKey.date))
-    .datetime(messages.invalid(fieldKey.date)),
+    .datetime(messages.invalid(fieldKey.date))
+    .transform((value) => new Date(value)),
   categoryId: z
     .number({ message: messages.missing(fieldKey.categoryId) })
     .int(messages.invalid(fieldKey.categoryId))

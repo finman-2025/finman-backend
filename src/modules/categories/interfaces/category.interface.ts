@@ -16,4 +16,13 @@ export class ICategory {
 
   @ApiPropertyOptional()
   limit?: number;
+  
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+
+  @ApiProperty()
+  isDeleted: boolean;
 }

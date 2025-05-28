@@ -19,6 +19,7 @@ export const createCategorySchema = z.object({
     })
     .optional(),
   type: z.preprocess(
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     (value) => value?.toString()?.toUpperCase(),
     z.nativeEnum(ExpenseType, {
       message: messages.invalid(fieldKey.expenseType, collectionKey.category),

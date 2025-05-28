@@ -21,9 +21,10 @@ export const createFinancialTipSchema = z.object({
         .string({ message: messages.missing(fieldKey.type) })
         .nonempty(messages.missing(fieldKey.type)),
     date: z
-        .string({ message: messages.missing(fieldKey.date) })
-        .nonempty(messages.missing(fieldKey.date))
-        .datetime(messages.invalid(fieldKey.date)),
+        .string()
+        .date(messages.invalid(fieldKey.date))
+        .transform((value) => new Date(value))
+        .optional(),
 });
 
 export type CreateFinancialTipDto = z.infer<typeof createFinancialTipSchema>;

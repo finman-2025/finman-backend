@@ -23,6 +23,7 @@ export const updateUserSchema = z.object({
     .min(10, { message: messages.invalid(fieldKey.email) })
     .optional(),
   sex: z.preprocess(
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     (value) => value?.toString()?.toUpperCase(),
     z
       .nativeEnum(Gender, { message: messages.invalid(fieldKey.sex) })

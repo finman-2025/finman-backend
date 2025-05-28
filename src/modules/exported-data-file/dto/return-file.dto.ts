@@ -11,10 +11,9 @@ export const returnFileSchema = z.object({
         .url({ message: messages.invalid(fieldKey.url) })
         .trim(),
     createdAt: z
-        .date()
-        .refine(date => date <= new Date(), {
-            message: messages.invalid(fieldKey.date),
-        })
+        .string()
+        .date(messages.invalid(fieldKey.date))
+        .transform((value) => new Date(value))
 });
 
 export type ReturnFileDto = z.infer<typeof returnFileSchema>;
