@@ -24,7 +24,7 @@ export class CloudStorageService {
   constructor(private configService: ConfigService) {
     this.storage = new Storage({
       keyFilename:
-        this.configService.get<string>('GOOGLE_JSON_KEY_PATH') ||
+        './' + this.configService.get<string>('GOOGLE_JSON_KEY_PATH') ||
         './certs/google-cloud-api-key.json',
     });
     this.bucketName = this.configService.get<string>(
