@@ -26,7 +26,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_PORT: ${DB_PORT}
     volumes:
-      - ./config/${GOOGLE_JSON_KEY_PATH}:/app/config/${GOOGLE_JSON_KEY_PATH}:ro
+      - ./${GOOGLE_JSON_KEY_PATH}:/app/${GOOGLE_JSON_KEY_PATH}:ro
       - ./.env:/app/.env:ro
     ports:
       - 8080:8080
