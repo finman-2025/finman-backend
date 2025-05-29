@@ -65,11 +65,11 @@ export class AuthService {
     const payload = { sub: userId };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
+      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
     });
 
     let refreshTokenLength: number =
-      this.configService.get<number>('REFRESH_TOKEN_LENGTH') || 6;
+      this.configService.get<number>('REFRESH_TOKEN_LENGTH') || 64;
     refreshTokenLength = Number(refreshTokenLength);
     const refreshToken = randomBytes(refreshTokenLength).toString('hex');
 
@@ -110,7 +110,8 @@ export class AuthService {
         userId: user['id'] as number,
         expiresAt: new Date(
           Date.now() +
-            this.configService.get<number>('REFRESH_TOKEN_EXPIRES') * 1000,
+            Number(this.configService.get<number>('REFRESH_TOKEN_EXPIRES')) *
+              1000,
         ),
       },
     });
@@ -125,21 +126,15 @@ export class AuthService {
     if (!tokenData)
       throw new UnauthorizedException(responseMessage.sectionExpired);
 
-    try {
-      const newAccessToken = await this.jwtService.signAsync(
-        { sub: tokenData.userId },
-        {
-          expiresIn:
-            this.configService.get<number>('ACCESS_TOKEN_EXPIRES') * 1000,
-        },
-      );
+    if (tokenData.expiresAt < new Date())
+      throw new UnauthorizedException(responseMessage.sectionExpired);
 
-      return new TokensDto(newAccessToken, refreshToken);
-    } catch {
-      throw new ServiceUnavailableException(
-        responseMessage.internalServerError,
-      );
-    }
+    const newAccessToken = await this.jwtService.signAsync(
+      { sub: tokenData.userId },
+      { expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES') },
+    );
+
+    return new TokensDto(newAccessToken, refreshToken);
   }
 
   async logout(userId: number) {
@@ -149,11 +144,11 @@ export class AuthService {
   }
 
   async changePassword(
-    username: string,
+    userId: number,
     oldPassword: string,
     newPassword: string,
   ) {
-    const user = await this.usersService.findOneByUsername(username);
+    const user = await this.usersService.findOneById(userId);
     if (!user)
       throw new NotFoundException(responseMessage.notFound(collectionKey.user));
 

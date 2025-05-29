@@ -22,7 +22,7 @@ import {
   collectionKey,
   fieldKey,
   responseMessage,
-  summaries
+  summaries,
 } from 'src/common/text';
 import { ExceptionDto, IResponseMessage } from 'src/common/dto';
 
@@ -38,7 +38,7 @@ import {
   RefreshDto,
   refreshSchema,
   ChangePasswordDto,
-  changePasswordSchema
+  changePasswordSchema,
 } from './dto';
 import { ICreateUser, IReturnUser } from 'src/modules/users/interfaces';
 import { IChangePassword, ILogin, IRefresh } from './interfaces';
@@ -50,7 +50,7 @@ import { UsersService } from '../users/users.service';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly userService: UsersService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Post('register')
@@ -58,11 +58,11 @@ export class AuthController {
   @ApiOperation({ summary: summaries.create(collectionKey.user) })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IResponseMessage
+    type: IResponseMessage,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   @ApiBody({ type: ICreateUser })
   async register(
@@ -78,11 +78,11 @@ export class AuthController {
   @ApiOperation({ summary: summaries.login() })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: TokensDto
+    type: TokensDto,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   @ApiBody({ type: ILogin })
   @UsePipes(new ZodValidationPipe(loginSchema))
@@ -95,11 +95,11 @@ export class AuthController {
   @ApiOperation({ summary: summaries.refresh() })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: TokensDto
+    type: TokensDto,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   @ApiBody({ type: IRefresh })
   @UsePipes(new ZodValidationPipe(refreshSchema))
@@ -112,16 +112,18 @@ export class AuthController {
   @ApiOperation({ summary: summaries.profile() })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IReturnUser
+    type: IReturnUser,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   async profile(@Req() req: Request): Promise<IReturnUser> {
-    const user = await this.userService.findOneById(req.user['id']);
-    if (!user) throw new NotFoundException(responseMessage.notFound(collectionKey.user));
-    return user;
+    const user = await this.usersService.findOneById(req.user['id']);
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    return this.usersService.extractProfileData(user);
   }
 
   @Post('logout')
@@ -129,11 +131,11 @@ export class AuthController {
   @ApiOperation({ summary: summaries.logout() })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IResponseMessage
+    type: IResponseMessage,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   async logout(@Req() req: Request): Promise<IResponseMessage> {
     await this.authService.logout(req.user['id']);
@@ -142,20 +144,25 @@ export class AuthController {
 
   @Post('change-password')
   @ApiBearerAuth()
-  @ApiOperation({ summary: summaries.update(collectionKey.user, fieldKey.password) })
+  @ApiOperation({
+    summary: summaries.update(collectionKey.user, fieldKey.password),
+  })
   @ApiOkResponse({
     description: responseMessage.success,
-    type: IResponseMessage
+    type: IResponseMessage,
   })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest(),
-    type: ExceptionDto
+    type: ExceptionDto,
   })
   @ApiBody({ type: IChangePassword })
   @UsePipes(new ZodValidationPipe(changePasswordSchema))
-  async changePassword(@Body() body: ChangePasswordDto): Promise<IResponseMessage> {
+  async changePassword(
+    @Req() req: Request,
+    @Body() body: ChangePasswordDto,
+  ): Promise<IResponseMessage> {
     await this.authService.changePassword(
-      body.username,
+      req.user['id'],
       body.oldPassword,
       body.newPassword,
     );

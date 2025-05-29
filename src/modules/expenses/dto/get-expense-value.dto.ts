@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fieldKey, messages, responseMessage } from 'src/common/text';
 
-export const getSpentSchema = z
+export const getExpenseValueSchema = z
   .object({
     startDate: z
       .string()
@@ -23,4 +23,4 @@ export const getSpentSchema = z
     { message: responseMessage.startDateBeforeEndDate },
   );
 
-export type GetSpentDto = z.infer<typeof getSpentSchema>;
+export type GetExpenseValueDto = z.infer<typeof getExpenseValueSchema>;

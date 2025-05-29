@@ -17,17 +17,26 @@ export class IUser {
   email: string;
 
   @ApiPropertyOptional()
-  phoneNumber: string;
+  phoneNumber?: string;
 
   @ApiPropertyOptional()
-  sex: string;
+  sex?: string;
 
   @ApiPropertyOptional()
-  dateOfBirth: Date;
+  dateOfBirth?: Date;
 
   @ApiPropertyOptional()
-  address: string;
+  address?: string;
 
   @ApiPropertyOptional()
-  avatar: string;
+  avatar?: string;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+
+  @ApiProperty()
+  isDeleted: boolean;
 }

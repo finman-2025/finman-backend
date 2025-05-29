@@ -1,58 +1,68 @@
-import { Injectable, InternalServerErrorException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-
-import * as fs from 'fs';
-import { promisify } from "util";
-
-import { Storage } from '@google-cloud/storage';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from 'src/config/db.config';
 
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { collectionKey, fieldKey, responseMessage } from 'src/common/text';
 
-const unlinkAsync = promisify(fs.unlink);
-const fsReadFileAsync = promisify(fs.readFile);
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
+import { IReturnUser, IUser } from './interfaces';
 
 @Injectable()
 export class UsersService {
-  private readonly storage: Storage;
-  private readonly bucketName: string;
   private readonly bucketFolderName = 'avatars';
-  private readonly multerFolderName = 'uploads/avatars';
 
-  constructor(private prisma: PrismaService) {
-    this.storage = new Storage({
-      keyFilename: process.env.GOOGLE_JSON_KEY_PATH,
-      projectId: process.env.GOOGLE_PROJECT_ID,
-    });
-    this.bucketName = process.env.GOOGLE_STORAGE_BUCKET_NAME;
+  constructor(
+    private prisma: PrismaService,
+    private cloudStorageService: CloudStorageService,
+  ) {}
+
+  extractProfileData(user: IUser): IReturnUser {
+    if (!user)
+      throw new InternalServerErrorException(
+        responseMessage.internalServerError,
+      );
+
+    return {
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      sex: user.sex,
+      dateOfBirth: user.dateOfBirth,
+    };
   }
 
-  async findOneByUsername(username: string) {
+  async findOneByUsername(username: string): Promise<IUser | null> {
     return await this.prisma.user.findUnique({
       where: { username, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async findOneById(id: number) {
+  async findOneById(id: number): Promise<IUser | null> {
     return await this.prisma.user.findUnique({
       where: { id: id, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async findManyUsersBySearchString(searchString: string) {
+  async findManyUsersBySearchString(
+    searchString: string,
+  ): Promise<IUser[] | null> {
     return await this.prisma.user.findMany({
       where: {
         username: { contains: searchString },
         isDeleted: false,
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async createOne(data: CreateUserDto) {
+  async createOne(data: CreateUserDto): Promise<IUser | null> {
     return await this.prisma.user.create({
       data: {
         username: data.username,
@@ -60,11 +70,16 @@ export class UsersService {
         email: data.email,
         name: data.name,
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async updateOneById(id: number, data: UpdateUserDto) {
+  async updateOneById(id: number, data: UpdateUserDto): Promise<IUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id, isDeleted: false },
+    });
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
     return await this.prisma.user.update({
       where: { id, isDeleted: false },
       data: {
@@ -75,99 +90,94 @@ export class UsersService {
         dateOfBirth: data.dateOfBirth,
         address: data.address,
       },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async deleteOneById(id: number) {
+  async deleteOneById(id: number): Promise<IUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id, isDeleted: false },
+    });
+    if (!user || user.isDeleted)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
     return await this.prisma.user.update({
       where: { id },
       data: { isDeleted: true },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async updatePassword(id: number, newPassword: string) {
+  async updatePassword(id: number, newPassword: string): Promise<IUser | null> {
     return await this.prisma.user.update({
       where: { id, isDeleted: false },
       data: { password: newPassword },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
   }
 
-  async updateAvatar(userId: number, filePath: string, fileName: string, fileType: string) {
+  async updateAvatar(
+    userId: number,
+    localFilePath: string,
+    fileName: string,
+    fileType: string,
+  ): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
-    });
-
-    if (!user) 
-      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
-
-    if (user.avatar && user.avatar !== '') {
-      await this.deleteAvatar(userId, user.avatar);
-    }
-
-    const avatarBuffer = await fsReadFileAsync(filePath);
-    if (!avatarBuffer)
-      throw new InternalServerErrorException(responseMessage.notFound(fieldKey.file));
-
-    const bucket = this.storage.bucket(this.bucketName);
-    const destination = `${this.bucketFolderName}/${userId}/${fileName}`;
-
-    const gcsFile = bucket.file(destination);
-    await gcsFile.save(avatarBuffer, {
-      metadata: {
-        contentType: fileType,
-      },
-    });
-
-    await this.prisma.user.update({
-      where: { id: userId, isDeleted: false },
-      data: {
-        avatar: fileName,
-      }
-    });
-  }
-
-  async deleteAvatar(userId: number, fileName?: string) {
-    if (!fileName || fileName === '') {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId, isDeleted: false },
-        omit: { createdAt: true, updatedAt: true, isDeleted: true },
-      });
-      
-      if (!user || !user.avatar) 
-        throw new NotFoundException(responseMessage.notFound(collectionKey.user));
-    
-      fileName = user.avatar;
-    }
-
-    const filePath = `${this.bucketFolderName}/${userId}/${fileName}`;
-    const bucket = this.storage.bucket(this.bucketName);
-
-    await bucket.file(filePath).delete();
-    await this.prisma.user.update({
-      where: { id: userId, isDeleted: false },
-      data: { avatar: '' },
-    });
-  }
-
-  async getAvatar(userId: number): Promise<NodeJS.ReadableStream> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId, isDeleted: false },
-      omit: { createdAt: true, updatedAt: true, isDeleted: true },
+      select: { avatar: true },
     });
 
     if (!user)
       throw new NotFoundException(responseMessage.notFound(collectionKey.user));
-    if (!user.avatar || user.avatar === '')
-      throw new NotFoundException(responseMessage.notFound(fieldKey.avatar));
 
-    const filePath = `${this.bucketFolderName}/${userId}/${user.avatar}`;
-    const bucket = this.storage.bucket(this.bucketName);
-    const gcsFile = bucket.file(filePath);
+    if (user.avatar) await this.deleteAvatar(userId, user.avatar);
 
-    return gcsFile.createReadStream();
+    const cloudFilePath = this.cloudStorageService.getCloudFilePath(
+      this.bucketFolderName,
+      userId,
+      fileName,
+    );
+
+    const publicUrl = await this.cloudStorageService.uploadFile(
+      localFilePath,
+      cloudFilePath,
+      fileType,
+    );
+
+    await this.prisma.user.update({
+      where: { id: userId, isDeleted: false },
+      data: { avatar: publicUrl },
+    });
+    return publicUrl;
+  }
+
+  async deleteAvatar(userId: number, url?: string) {
+    if (!url) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId, isDeleted: false },
+        select: { avatar: true },
+      });
+
+      if (!user)
+        throw new NotFoundException(
+          responseMessage.notFound(collectionKey.user),
+        );
+      if (!user.avatar)
+        throw new NotFoundException(responseMessage.notFound(fieldKey.avatar));
+
+      url = user.avatar;
+    }
+
+    const urlInfo = url.split('/');
+    const fileName = urlInfo[urlInfo.length - 1];
+
+    const cloudFilePath = this.cloudStorageService.getCloudFilePath(
+      this.bucketFolderName,
+      userId,
+      fileName,
+    );
+    await this.cloudStorageService.deleteFile(cloudFilePath);
+
+    await this.prisma.user.update({
+      where: { id: userId, isDeleted: false },
+      data: { avatar: null },
+    });
   }
 }

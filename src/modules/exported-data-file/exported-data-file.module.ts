@@ -2,36 +2,21 @@ import { Module } from '@nestjs/common';
 import { ExportedDataFileController } from './exported-data-file.controller';
 import { ExportedDataFileService } from './exported-data-file.service';
 import { MulterModule } from '@nestjs/platform-express';
-import { ExpensesService } from '../expenses/expenses.service';
 import { ExpensesModule } from '../expenses/expenses.module';
+import { CloudStorageModule } from '../cloud-storage/cloud-storage.module';
+import { MulterConfigService } from 'src/config/multer.config';
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 
 @Module({
   imports: [
-    MulterModule.register({
-      dest: './uploads/exported_data_files',
-      fileFilter: (req, file, cb) => {
-        const allowedTypes = [
-          'text/plain',
-          'application/pdf',
-          'text/csv',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ];
-        if (allowedTypes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(
-            new Error('Only TXT, PDF, CSV, XLS, XLSX files are allowed!'),
-            false,
-          );
-        }
-      },
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-    }),
+    MulterModule.register(
+      new MulterConfigService('exported_data_files', false).createMulterOptions(),
+    ),
+    CloudStorageModule,
     ExpensesModule,
   ],
   controllers: [ExportedDataFileController],
-  providers: [ExportedDataFileService],
+  providers: [ExportedDataFileService, CloudStorageService],
   exports: [ExportedDataFileService],
 })
 export class ExportedDataFileModule {}

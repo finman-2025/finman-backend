@@ -53,7 +53,7 @@ export class CloudStorageService {
 
       await unlinkAsync(localFilePath);
 
-      return gcsFile.publicUrl();
+      return gcsFile.publicUrl().replaceAll('%2F', '/');
     } catch (error) {
       console.error('uploadFile error:', error);
       throw new InternalServerErrorException('Failed to export data');

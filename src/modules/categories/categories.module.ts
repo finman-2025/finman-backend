@@ -7,7 +7,6 @@ import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { ExpensesModule } from '../expenses/expenses.module';
 import { CloudStorageModule } from '../cloud-storage/cloud-storage.module';
-import { allowedImageTypes } from 'src/common/utils';
 
 @Module({
   controllers: [CategoriesController],
@@ -15,10 +14,7 @@ import { allowedImageTypes } from 'src/common/utils';
   imports: [
     forwardRef(() => ExpensesModule),
     MulterModule.register(
-      new MulterConfigService(
-        'categories',
-        allowedImageTypes,
-      ).createMulterOptions(),
+      new MulterConfigService('categories', true).createMulterOptions(),
     ),
     CloudStorageModule,
   ],

@@ -42,9 +42,9 @@ import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 import {
   createExpenseSchema,
   updateExpenseSchema,
-  getSpentSchema,
+  getExpenseValueSchema,
   CreateExpenseDto,
-  GetSpentDto,
+  GetExpenseValueDto,
   UpdateExpenseDto,
 } from './dto';
 import {
@@ -126,7 +126,8 @@ export class ExpensesController {
   })
   async getTotalExpenseValue(
     @Req() req: Request,
-    @Query(new ZodValidationPipe(getSpentSchema)) query: GetSpentDto,
+    @Query(new ZodValidationPipe(getExpenseValueSchema))
+    query: GetExpenseValueDto,
   ): Promise<ITotalExpenseValue> {
     const { startDate, endDate, categoryId } = query;
 
