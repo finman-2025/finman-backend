@@ -3,6 +3,7 @@ export type AppConfig = {
   host: string;
   port: number;
   payloadLimit: string;
+  corsOrigin: string | string[];
 };
 
 export default () => {
@@ -11,6 +12,7 @@ export default () => {
     host: process.env.HOST,
     port: parseInt(process.env.PORT),
     payloadLimit: process.env.PAYLOAD_LIMIT ?? '50mb',
+    corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
   };
 
   return { app };

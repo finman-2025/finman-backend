@@ -22,8 +22,6 @@ import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 
 @Injectable()
 export class ExportedDataFileService {
-  private readonly storage: Storage;
-  private readonly bucketName: string;
   private readonly bucketFolderName = 'exported_data_files';
   private readonly multerFolderName = 'uploads/exported_data_files';
 
@@ -116,7 +114,7 @@ export class ExportedDataFileService {
       date: expense.date.toISOString().replace('T', ' ').split('.')[0],
       description: expense.description,
       value: expense.value,
-      category: expense.category.name,
+      category: expense.category?.name || 'Uncategorized',
       type: expense.type,
     }));
 

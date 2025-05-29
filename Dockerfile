@@ -9,6 +9,8 @@ RUN npm ci
 
 COPY . .
 
+RUN npx prisma generate
+
 RUN npm run build
 
 RUN npm ci --only=production && npm cache clean --force
@@ -22,6 +24,10 @@ COPY --from=build /app/package*.json .
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 
-EXPOSE 3001
+RUN mkdir -p /app/uploads
+
+EXPOSE 8080
 
 CMD ["npm", "run", "start:prod"]
+
+ENTRYPOINT ["docker-entrypoint.sh"]
