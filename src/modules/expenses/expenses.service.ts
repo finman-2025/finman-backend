@@ -70,7 +70,8 @@ export class ExpensesService {
     let message = null;
     if (data.categoryId) {
       const category = await this.categoriesService.findOneById(
-        data.categoryId,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        data.categoryId as number,
       );
       if (!category)
         throw new NotFoundException(
@@ -80,10 +81,14 @@ export class ExpensesService {
 
       if (category.type === ExpenseType.OUTCOME) {
         const { spent } = await this.getTotalExpenseValue(
-          data.userId,
-          data.categoryId,
-          getFirstDateOfMonth(data.date),
-          getLastDateOfMonth(data.date),
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          data.userId as number,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          data.categoryId as number,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          getFirstDateOfMonth(data.date as Date),
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          getLastDateOfMonth(data.date as Date),
         );
 
         if (category.limit && spent + data.value > category.limit)

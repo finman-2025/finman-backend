@@ -8,8 +8,6 @@ import {
 import { createObjectCsvWriter } from 'csv-writer';
 import * as path from 'path';
 
-import { Storage } from '@google-cloud/storage';
-
 import { PrismaService } from 'src/config/db.config';
 import { collectionKey, fieldKey, responseMessage } from 'src/common/text';
 
@@ -18,8 +16,6 @@ import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 
 @Injectable()
 export class ExportedDataFileService {
-  private readonly storage: Storage;
-  private readonly bucketName: string;
   private readonly bucketFolderName = 'exported_data_files';
   private readonly multerFolderName = 'uploads/exported_data_files';
 

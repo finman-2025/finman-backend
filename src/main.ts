@@ -23,7 +23,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api', { exclude: ['/'] });
 
   app.enableCors({
-    origin: '*',
+    origin: appConfig.corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });

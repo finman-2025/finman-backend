@@ -18,4 +18,10 @@ export class IExportedDataFile {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+
+  @ApiProperty()
+  isDeleted: boolean;
 }

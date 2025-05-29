@@ -107,7 +107,6 @@ export class ReceiptService {
     }
 
     const dateString = `${yearPart}-${monthPart}-${datePart}T${hourPart || '00:00:00'}`;
-    console.log(dateString);
     const isoDate = new Date(dateString);
     return isoDate.toISOString();
   }
