@@ -36,7 +36,6 @@ import {
   optionalIdSchema,
 } from 'src/common/dto';
 
-import { ExpenseType } from '@prisma/client';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import {

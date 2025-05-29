@@ -27,6 +27,6 @@ COPY --from=build /app/prisma ./prisma
 
 RUN mkdir -p /app/uploads
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["sh", "-c", "npx prisma db push && node dist/prisma/seed.js && npm run start:prod"]

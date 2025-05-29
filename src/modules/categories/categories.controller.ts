@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  UsePipes,
   Body,
   Param,
   NotFoundException,
@@ -37,7 +36,6 @@ import {
   collectionKey,
 } from 'src/common/text';
 
-import { ExpenseType } from '@prisma/client';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 import {

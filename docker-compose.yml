@@ -27,7 +27,7 @@ services:
       - ./${GOOGLE_JSON_KEY_PATH}:/app/${GOOGLE_JSON_KEY_PATH}:ro
       - ./.env:/app/.env:ro
     ports:
-      - 3000:3000
+      - ${$PORT}:${$PORT}
     depends_on:
       - database
 

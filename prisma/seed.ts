@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 

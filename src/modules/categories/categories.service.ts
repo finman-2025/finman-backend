@@ -102,10 +102,13 @@ export class CategoriesService {
 
     return await this.prisma.category.create({
       data: {
-        name: data.name,
-        limit: data.type === ExpenseType.OUTCOME ? data.limit : undefined,
-        type: data.type,
-        image: data.image,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        name: data.name as string,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        limit: (data.type as ExpenseType) === ExpenseType.OUTCOME ? (data.limit as number) : undefined,
+        type: data.type as ExpenseType,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        image: data.image as string,
         userId,
       },
       omit: { userId: true, createdAt: true, updatedAt: true, isDeleted: true },

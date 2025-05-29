@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import { ExpenseType } from '@prisma/client';
 
-import { messages, fieldKey, collectionKey } from 'src/common/text';
-import { nameRegex } from 'src/common/utils';
+import { messages, fieldKey } from 'src/common/text';
 
 export const updateExpenseSchema = z.object({
   value: z

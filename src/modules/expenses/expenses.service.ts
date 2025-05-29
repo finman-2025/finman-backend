@@ -91,19 +91,25 @@ export class ExpensesService {
           getLastDateOfMonth(data.date as Date),
         );
 
-        if (category.limit && spent + data.value > category.limit)
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        if (category.limit && spent + (data.value as number) > category.limit)
           message = responseMessage.overSpent(category.name);
       }
     }
 
     const expense = await this.prisma.expense.create({
       data: {
-        userId: data.userId,
-        type,
-        value: data.value,
-        description: data.description,
-        date: data.date,
-        categoryId: data.categoryId || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        userId: data.userId as number,
+        type: type as ExpenseType,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        value: data.value as number,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        description: data.description as string,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        date: data.date as Date,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        categoryId: data.categoryId as number,
       },
       include: {
         category: {
