@@ -4,5 +4,8 @@ import { IUser } from "./user.interface";
 export class IUpdateUser extends PickType(IUser, [
     "name",
     "email",
-    "phoneNumber"
+    "phoneNumber",
+    'sex',
+    "dateOfBirth",
+    "address",
 ]) {}

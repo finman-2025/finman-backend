@@ -1,29 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/config/db.config';
 import { CreateUserDto, UpdateUserDto } from './dto';
+import { IReturnUser, IUser } from './interfaces';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findOneByUsernameAndPassword(username: string, password: string) {
-    return await this.prisma.user.findFirst({
+    return await this.prisma.user.findUnique({
       where: { username, password },
-      omit: { username: true, password: true },
     });
   }
 
   async findOneByUsername(username: string) {
-    return await this.prisma.user.findFirst({
+    return await this.prisma.user.findUnique({
       where: { username },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
     });
   }
 
   async findOneById(id: number) {
-    return await this.prisma.user.findFirst({
+    return await this.prisma.user.findUnique({
       where: { id },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
     });
   }
 
@@ -31,10 +29,9 @@ export class UsersService {
     return await this.prisma.user.findMany({
       where: {
         username: {
-          contains: searchString
-        }
+          contains: searchString,
+        },
       },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
     });
   }
 
@@ -44,8 +41,8 @@ export class UsersService {
         username: data.username,
         password: data.password,
         email: data.email,
-        name: data.name
-      }
+        name: data.name,
+      },
     });
   }
 
@@ -55,15 +52,23 @@ export class UsersService {
       data: {
         email: data.email,
         name: data.name,
-        phoneNumber: data.phoneNumber
+        phoneNumber: data.phoneNumber,
       },
-      omit: { username: true, password: true, createdAt: true, updatedAt: true },
-    })
+    });
   }
 
   async deleteOneById(id: number) {
     return await this.prisma.user.delete({
       where: { id },
     });
+  }
+
+  getBasicUserInfo(user: IUser): IReturnUser {
+    const {
+      password,
+      username,
+      ... rest
+    } = user;
+    return rest;
   }
 }

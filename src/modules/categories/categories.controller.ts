@@ -9,26 +9,26 @@ import {
   InternalServerErrorException,
   Patch,
   Delete,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { Request } from 'express';
 
-import { 
-  idSchema,
-  ExceptionDto
-} from 'src/common/dto';
+import { idSchema, ExceptionDto } from 'src/common/dto';
 import {
   CreateCategoryDto,
   createCategorySchema,
   UpdateCategoryDto,
   updateCategorySchema,
 } from './dto';
-import { ICategory, ICreateCategory, IUpdateCategory } from './interface';
+import { ICategory, ICreateCategory, IUpdateCategory } from './interfaces';
 
 import { CategoriesService } from './categories.service';
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
@@ -45,14 +45,15 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
+  @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getList(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
-  async getCategoryByUser(): Promise<ICategory[]> {
-    const categories = await this.categoriesService.findAll(1);
+  async getCategoryByUser(@Req() req: Request): Promise<ICategory[]> {
+    const categories = await this.categoriesService.findAll(req.user['id']);
     if (!categories) {
       throw new NotFoundException(messages.notFound(collectionKey.user));
     }
@@ -60,6 +61,7 @@ export class CategoriesController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiNotFoundResponse({
@@ -77,16 +79,20 @@ export class CategoriesController {
   }
 
   @Post()
+  @ApiBearerAuth()
   @ApiOperation({ summary: summaries.create(collectionKey.category) })
-  @ApiBody({ type: ICreateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
   @ApiBadRequestResponse({
     description: responseMessage.badRequest,
     type: ExceptionDto,
   })
+  @ApiBody({ type: ICreateCategory })
   @UsePipes(new ZodValidationPipe(createCategorySchema))
-  async createCategory(@Body() body: CreateCategoryDto): Promise<ICategory> {
-    const category = await this.categoriesService.create(body, 2);
+  async createCategory(
+    @Req() req: Request,
+    @Body() body: CreateCategoryDto,
+  ): Promise<ICategory> {
+    const category = await this.categoriesService.create(body, req.user['id']);
     if (!category) {
       throw new InternalServerErrorException(
         responseMessage.internalServerError,
@@ -96,6 +102,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.category) })
   @ApiBody({ type: IUpdateCategory })
   @ApiOkResponse({ description: responseMessage.success, type: ICategory })
@@ -119,6 +126,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: summaries.delete(collectionKey.category) })
   @ApiOkResponse({ description: responseMessage.success, type: Boolean })
   @ApiNotFoundResponse({
@@ -127,7 +135,7 @@ export class CategoriesController {
   })
   async deleteCategory(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     const category = await this.categoriesService.findOneById(id);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ICategory } from 'src/modules/categories/interface';
+import { ICategory } from 'src/modules/categories/interfaces';
 
 export class IUser {
   @ApiProperty()
@@ -12,6 +12,9 @@ export class IUser {
   password: string;
 
   @ApiProperty()
+  refreshToken: string;
+
+  @ApiProperty()
   name: string;
 
   @ApiProperty()
@@ -21,7 +24,16 @@ export class IUser {
   phoneNumber: string;
 
   @ApiProperty()
-  categories: ICategory[];
+  sex: string;
+
+  @ApiProperty()
+  dateOfBirth: Date;
+
+  @ApiProperty()
+  address: string;
+
+  @ApiProperty()
+  avatar: string;
 
   @ApiProperty()
   createdAt: Date;
