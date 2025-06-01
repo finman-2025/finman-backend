@@ -19,13 +19,13 @@ import { UsersModule } from './modules/users/users.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { FinancialTipsModule } from './modules/financial-tips/financial-tips.module';
+import { ExportedDataFileModule } from './modules/exported-data-file/exported-data-file.module';
+import { ReceiptModule } from './modules/receipt/receipt.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SchedulerService } from './modules/scheduler/scheduler.service';
 import { JwtStrategy } from './guards/strategies/jwt.strategy';
-import { ExportedDataFileModule } from './modules/exported-data-file/exported-data-file.module';
-import { ReceiptModule } from './modules/receipt/receipt.module';
 
 @Module({
   imports: [
