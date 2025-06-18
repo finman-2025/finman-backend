@@ -1,83 +1,83 @@
-name: Finman
+# name: Finman
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
-permissions:
-  contents: write
+# permissions:
+#   contents: write
 
-jobs:
-  deploy-to-render:
-    name: Deploy to Render
-    runs-on: ubuntu-latest
-    if: github.actor != 'github-actions'
-    steps:
-      - name: Trigger Render Deploy Hook
-        run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+# jobs:
+#   deploy-to-render:
+#     name: Deploy to Render
+#     runs-on: ubuntu-latest
+#     if: github.actor != 'github-actions'
+#     steps:
+#       - name: Trigger Render Deploy Hook
+#         run: |
+#           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 
-  bump-version:
-    name: Bump Version
-    needs: deploy-to-render
-    runs-on: ubuntu-latest
-    if: github.actor != 'github-actions'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#   bump-version:
+#     name: Bump Version
+#     needs: deploy-to-render
+#     runs-on: ubuntu-latest
+#     if: github.actor != 'github-actions'
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
 
-      - name: Bump version
-        uses: 'phips28/gh-action-bump-version@master'
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_ACTION }}
-        with:
-          check-last-commit-only: true
+#       - name: Bump version
+#         uses: 'phips28/gh-action-bump-version@master'
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.TOKEN_ACTION }}
+#         with:
+#           check-last-commit-only: true
 
-  create-release:
-    name: Create Release
-    needs: [deploy-to-render, bump-version]
-    runs-on: ubuntu-latest
-    if: github.actor != 'github-actions'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#   create-release:
+#     name: Create Release
+#     needs: [deploy-to-render, bump-version]
+#     runs-on: ubuntu-latest
+#     if: github.actor != 'github-actions'
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3
-        with:
-          versionSpec: '6.3.x'
+#       - name: Install GitVersion
+#         uses: gittools/actions/gitversion/setup@v3
+#         with:
+#           versionSpec: '6.3.x'
 
-      - name: Determine version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v3
+#       - name: Determine version
+#         id: gitversion
+#         uses: gittools/actions/gitversion/execute@v3
 
-      - name: Create release
-        uses: ncipollo/release-action@v1.16.0
-        with:
-          allowUpdates: false
-          skipIfReleaseExists: true
-          draft: false
-          makeLatest: true
-          tag: v${{ steps.gitversion.outputs.semVer }}
-          name: Release v${{ steps.gitversion.outputs.semVer }}
-          body: Release ${{ steps.gitversion.outputs.semVer }} of ${{ github.event.repository.name }}
+#       - name: Create release
+#         uses: ncipollo/release-action@v1.16.0
+#         with:
+#           allowUpdates: false
+#           skipIfReleaseExists: true
+#           draft: false
+#           makeLatest: true
+#           tag: v${{ steps.gitversion.outputs.semVer }}
+#           name: Release v${{ steps.gitversion.outputs.semVer }}
+#           body: Release ${{ steps.gitversion.outputs.semVer }} of ${{ github.event.repository.name }}
 
-      - name: Update badge
-        run: |
-          git config user.name "CuongPhan03"
-          git config user.email "phanthecuong2210@gmail.com"
-          git pull
-          BADGE_IMAGE="https://img.shields.io/badge/version-${{ steps.gitversion.outputs.semVer }}.svg"
-          RELEASE_LINK="https://github.com/finman-2025/${{ github.event.repository.name }}/releases/tag/v${{ steps.gitversion.outputs.semVer }}"
-          FIRST_LINE="# Finman App [![Version](${BADGE_IMAGE})](${RELEASE_LINK})"
-          sed -i "1s|.*|${FIRST_LINE}|" README.md
-          git add .
-          git commit -m "docs: update version badge" || echo "No changes to commit"
-          git push
+#       - name: Update badge
+#         run: |
+#           git config user.name "CuongPhan03"
+#           git config user.email "phanthecuong2210@gmail.com"
+#           git pull
+#           BADGE_IMAGE="https://img.shields.io/badge/version-${{ steps.gitversion.outputs.semVer }}.svg"
+#           RELEASE_LINK="https://github.com/finman-2025/${{ github.event.repository.name }}/releases/tag/v${{ steps.gitversion.outputs.semVer }}"
+#           FIRST_LINE="# Finman App [![Version](${BADGE_IMAGE})](${RELEASE_LINK})"
+#           sed -i "1s|.*|${FIRST_LINE}|" README.md
+#           git add .
+#           git commit -m "docs: update version badge" || echo "No changes to commit"
+#           git push
