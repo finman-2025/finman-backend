@@ -1,4 +1,4 @@
-# Finman App [![Version](https://img.shields.io/badge/version-0.0.6-8.svg)](https://github.com/finman-2025/finman-backend/releases/tag/v0.0.6-8)
+# Finman App [![Version](https://img.shields.io/badge/version-0.0.8-50.svg)](https://github.com/finman-2025/finman-backend/releases/tag/v0.0.8-50)
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
