@@ -7,22 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ExpenseType {
+  INCOME
+  OUTCOME
+}
+
+enum Sender {
+  USER
+  AI
+}
+
 model User {
   id Int @id @default(autoincrement())
 
   username String @unique
   password String
 
-  refreshToken String?
-
   name        String
   email       String
   phoneNumber String?
-  sex         String?
+  sex         Gender?
   dateOfBirth DateTime?
   address     String?
   avatar      String?
 
+  refreshTokens     RefreshToken[]
   expenses          Expense[]
   categories        Category[]
   exportedDataFiles ExportedDataFile[]
@@ -31,13 +46,30 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("user")
+}
+
+model RefreshToken {
+  id Int @id @default(autoincrement())
+
+  token String @unique
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token]) // Index for fast lookups
+  @@map("refresh_token")
 }
 
 model Category {
   id Int @id @default(autoincrement())
 
+  type  ExpenseType
   name  String
   image String?
   limit Int?
@@ -49,6 +81,7 @@ model Category {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("category")
 }
@@ -56,6 +89,7 @@ model Category {
 model Expense {
   id Int @id @default(autoincrement())
 
+  type        ExpenseType
   value       Int
   description String?
   date        DateTime
@@ -68,6 +102,7 @@ model Expense {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("expense")
 }
@@ -79,11 +114,12 @@ model FinancialTip {
   author      String
   authorImage String?
   date        DateTime @default(now())
-  type        String
+  type        String?
   content     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("financial_tip")
 }
@@ -95,11 +131,12 @@ model ExportedDataFile {
   userId Int
 
   fileName String
-  filePath String
   fileType String
+  url      String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("exported_data_file")
 }
@@ -116,6 +153,7 @@ model Notification {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("notification")
 }
@@ -130,13 +168,9 @@ model AIChatSession {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("ai_chat_session")
-}
-
-enum Sender {
-  USER
-  AI
 }
 
 model Message {
@@ -150,6 +184,7 @@ model Message {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
   @@map("message")
 }

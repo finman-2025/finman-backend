@@ -17,7 +17,10 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
 } from '@nestjs/swagger';
+
+import { Request } from 'express';
 
 import {
   collectionKey,
@@ -25,37 +28,131 @@ import {
   responseMessage,
   summaries,
 } from 'src/common/text';
-import { ExceptionDto, idSchema } from 'src/common/dto';
-import { Request } from 'express';
-
-import { ExpensesService } from './expenses.service';
-import { ICreateExpense, IReturnExpense, IUpdateExpense } from './interfaces';
 import {
-  CreateExpenseDto,
-  createExpenseSchema,
-  UpdateExpenseDto,
-  updateExpenseSchema,
-} from './dto';
+  ExceptionDto,
+  idSchema,
+  IResponseMessage,
+  optionalDateSchema,
+  optionalIdSchema,
+} from 'src/common/dto';
 
 import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
-import { UsersService } from '../users/users.service';
-import { CategoriesService } from '../categories/categories.service';
+import {
+  createExpenseSchema,
+  updateExpenseSchema,
+  getExpenseValueSchema,
+  CreateExpenseDto,
+  GetExpenseValueDto,
+  UpdateExpenseDto,
+} from './dto';
+import {
+  ICreateExpense,
+  IReturnExpense,
+  ITotalExpenseValue,
+  IUpdateExpense,
+} from './interfaces';
+
+import { ExpensesService } from './expenses.service';
+import { CategoriesService } from 'src/modules/categories/categories.service';
 
 @Controller('expenses')
 export class ExpensesController {
   constructor(
     private readonly expensesService: ExpensesService,
-    private readonly usersService: UsersService,
     private readonly categoriesService: CategoriesService,
   ) {}
+
+  @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getMany(collectionKey.expense) })
+  @ApiQuery({ name: 'categoryId', required: false, type: Number })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [IReturnExpense],
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(collectionKey.expense),
+    type: ExceptionDto,
+  })
+  async getExpenses(
+    @Req() req: Request,
+    @Query('categoryId', new ZodValidationPipe(optionalIdSchema))
+    categoryId?: number,
+    @Query('date', new ZodValidationPipe(optionalDateSchema))
+    date?: Date,
+  ): Promise<IReturnExpense[]> {
+    if (categoryId) {
+      const category = await this.categoriesService.findOneById(categoryId);
+      if (!category)
+        throw new NotFoundException(messages.notFound(collectionKey.category));
+    }
+
+    return await this.expensesService.findMany(
+      req.user['id'],
+      categoryId,
+      date,
+    );
+  }
+
+  @Get('total')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getTotal(collectionKey.expense) })
+  @ApiQuery({
+    name: 'startDate',
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    type: String,
+    description: 'yyyy-mm-dd',
+  })
+  @ApiQuery({ name: 'categoryId', required: false, type: Number })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: ITotalExpenseValue,
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(collectionKey.expense),
+    type: ExceptionDto,
+  })
+  async getTotalExpenseValue(
+    @Req() req: Request,
+    @Query(new ZodValidationPipe(getExpenseValueSchema))
+    query: GetExpenseValueDto,
+  ): Promise<ITotalExpenseValue> {
+    const { startDate, endDate, categoryId } = query;
+
+    if (categoryId) {
+      const category = await this.categoriesService.findOneById(categoryId);
+      if (!category)
+        throw new NotFoundException(messages.notFound(collectionKey.category));
+    }
+
+    return await this.expensesService.getTotalExpenseValue(
+      req.user['id'],
+      categoryId,
+      startDate,
+      endDate,
+    );
+  }
 
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async getExpenseById(
@@ -71,34 +168,37 @@ export class ExpensesController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.create(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense,
+  })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiBody({ type: ICreateExpense })
   async createExpense(
     @Req() req: Request,
     @Body(new ZodValidationPipe(createExpenseSchema)) body: CreateExpenseDto,
-  ): Promise<IReturnExpense> {
+  ): Promise<IReturnExpense | { message: string }> {
     body.userId = req.user['id'];
     const expense = await this.expensesService.createOne(body);
-    if (!expense) {
-      throw new NotFoundException(messages.notFound(collectionKey.expense));
-    }
     return expense;
   }
 
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnExpense })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnExpense,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   @ApiBody({ type: IUpdateExpense })
@@ -106,11 +206,7 @@ export class ExpensesController {
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
     @Body(new ZodValidationPipe(updateExpenseSchema)) body: UpdateExpenseDto,
   ): Promise<IReturnExpense> {
-    const expense = await this.expensesService.updateOneById(id, body);
-    if (!expense) {
-      throw new NotFoundException(messages.notFound(collectionKey.expense));
-    }
-    return expense;
+    return await this.expensesService.updateOneById(id, body);
   }
 
   @Delete(':id')
@@ -118,7 +214,7 @@ export class ExpensesController {
   @ApiOperation({ summary: summaries.delete(collectionKey.expense) })
   @ApiOkResponse({ description: responseMessage.success })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.expense),
     type: ExceptionDto,
   })
   async deleteExpense(
@@ -132,45 +228,29 @@ export class ExpensesController {
     return true;
   }
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: summaries.getMany(collectionKey.expense) })
-  @ApiOkResponse({
-    description: responseMessage.success,
-    type: [IReturnExpense],
-  })
-  @ApiNotFoundResponse({
-    description: responseMessage.notFound,
-    type: ExceptionDto,
-  })
-  async getExpensesByUserId(@Req() req: Request): Promise<IReturnExpense[]> {
-    const user = await this.usersService.findOneById(req.user['id']);
-    if (!user) {
-      throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
-    return await this.expensesService.findManyByCategoryId(req.user['id']);
-  }
-
   @Delete()
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.deleteMany(collectionKey.expense) })
-  @ApiOkResponse({ description: responseMessage.success })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.category),
     type: ExceptionDto,
   })
   @ApiBadRequestResponse({
-    description: responseMessage.badRequest,
+    description: responseMessage.badRequest(),
     type: ExceptionDto,
   })
   async deleteAllExpensesByUserId(
     @Query('categoryId', new ZodValidationPipe(idSchema)) categoryId: number,
-  ): Promise<boolean> {
+  ): Promise<IResponseMessage> {
     const category = await this.categoriesService.findOneById(categoryId);
     if (!category) {
       throw new NotFoundException(messages.notFound(collectionKey.category));
     }
     await this.expensesService.deleteAllCategoryExpenses(categoryId);
-    return true;
+    return { message: responseMessage.success };
   }
 }

@@ -7,84 +7,184 @@ import {
   NotFoundException,
   Body,
   Query,
+  Req,
+  Put,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
-import { idSchema, ExceptionDto } from 'src/common/dto';
+import { string } from 'zod';
+import { Request } from 'express';
+
 import { responseMessage, messages, summaries } from 'src/common/text/messages';
-import { collectionKey } from 'src/common/text/keywords';
+import { collectionKey, fieldKey } from 'src/common/text/keywords';
+import { idSchema, ExceptionDto, IResponseMessage } from 'src/common/dto';
 import { nameSchema } from 'src/common/dto/name.dto';
 
-import {
-  UpdateUserDto,
-  updateUserSchema,
-} from './dto';
-import { IReturnUser, IUpdateUser } from './interfaces';
+import { ZodValidationPipe } from 'src/pipes/validation.pipe';
+
+import { UpdateUserDto, updateUserSchema } from './dto';
+import { IAvatarUrl, IReturnUser, IUpdateUser } from './interfaces';
 
 import { UsersService } from './users.service';
-import { ZodValidationPipe } from 'src/pipes/validation.pipe';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Put('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: summaries.update(collectionKey.user, fieldKey.avatar),
+  })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IAvatarUrl,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.file),
+    type: ExceptionDto,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Upload a file (JPEG, PNG, max 5MB)',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAvatar(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<IAvatarUrl> {
+    if (!file)
+      throw new BadRequestException(responseMessage.badRequest(fieldKey.file));
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const publicUrl = await this.usersService.updateAvatar(
+      req.user['id'],
+      file.path,
+      fileName,
+      file.mimetype,
+    );
+    return { avatar: publicUrl };
+  }
+
+  @Delete('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.delete(fieldKey.avatar) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage,
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(fieldKey.avatar),
+    type: ExceptionDto,
+  })
+  async deleteAvatar(@Req() req: Request): Promise<IResponseMessage> {
+    await this.usersService.deleteAvatar(req.user['id']);
+    return { message: responseMessage.success };
+  }
+
+  @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.getMany(collectionKey.user) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: [IReturnUser],
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  async getManyUsersBySearchString(
+    @Query('searchString', new ZodValidationPipe(nameSchema))
+    searchString: string,
+  ): Promise<IReturnUser[]> {
+    const users =
+      await this.usersService.findManyUsersBySearchString(searchString);
+    return users.map((user) => this.usersService.extractProfileData(user));
+  }
+
+  @Patch()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: summaries.update(collectionKey.user) })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnUser,
+  })
+  @ApiNotFoundResponse({
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
+    type: ExceptionDto,
+  })
+  @ApiBody({ type: IUpdateUser })
+  async updateCurrentUser(
+    @Req() req: Request,
+    @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserDto,
+  ): Promise<IReturnUser> {
+    const user = await this.usersService.updateOneById(req.user['id'], body);
+    return this.usersService.extractProfileData(user);
+  }
+
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.getOne(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnUser,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
     type: ExceptionDto,
   })
   async getUserById(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
   ): Promise<IReturnUser> {
     const user = await this.usersService.findOneById(id);
-    if (!user) {
+    if (!user)
       throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
-    return this.usersService.getBasicUserInfo(user);
-  }
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: summaries.getMany(collectionKey.user) })
-  async getManyUsersBySearchString(
-    @Query('searchString', new ZodValidationPipe(nameSchema))
-    searchString: string,
-  ): Promise<IReturnUser[]> {
-    const users = await this.usersService.findManyUsersBySearchString(searchString);
-    return users.map((user) => this.usersService.getBasicUserInfo(user));
+    return this.usersService.extractProfileData(user);
   }
-
-  // @Post()
-  // @ApiOperation({
-  //   summary: summaries.create(collectionKey.user),
-  // })
-  // @ApiBody({ type: ICreateUser })
-  // @ApiOkResponse({ description: responseMessage.success, type: Boolean })
-  // @ApiBadRequestResponse({
-  //   description: responseMessage.badRequest,
-  //   type: ExceptionDto,
-  // })
-  // @UsePipes(new ZodValidationPipe(createUserSchema))
-  // async createUser(@Body() body: CreateUserDto): Promise<Boolean> {
-  //   await this.usersService.createOne(body);
-  //   return true;
-  // }
 
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.update(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: IReturnUser })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IReturnUser,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
     type: ExceptionDto,
   })
   @ApiBody({ type: IUpdateUser })
@@ -93,28 +193,28 @@ export class UsersController {
     @Body(new ZodValidationPipe(updateUserSchema)) body: UpdateUserDto,
   ): Promise<IReturnUser> {
     const user = await this.usersService.updateOneById(id, body);
-    if (!user) {
-      throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
-    return this.usersService.getBasicUserInfo(user);
+    return this.usersService.extractProfileData(user);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: summaries.delete(collectionKey.user) })
-  @ApiOkResponse({ description: responseMessage.success, type: Boolean })
+  @ApiOkResponse({
+    description: responseMessage.success,
+    type: IResponseMessage,
+  })
   @ApiNotFoundResponse({
-    description: responseMessage.notFound,
+    description: responseMessage.notFound(collectionKey.user),
+    type: ExceptionDto,
+  })
+  @ApiBadRequestResponse({
+    description: responseMessage.badRequest(fieldKey.id),
     type: ExceptionDto,
   })
   async deleteUser(
     @Param('id', new ZodValidationPipe(idSchema)) id: number,
-  ): Promise<boolean> {
-    const user = await this.usersService.findOneById(id);
-    if (!user) {
-      throw new NotFoundException(messages.notFound(collectionKey.user));
-    }
+  ): Promise<IResponseMessage> {
     await this.usersService.deleteOneById(id);
-    return true;
+    return { message: responseMessage.success };
   }
 }

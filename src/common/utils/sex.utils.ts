@@ -1,1 +1,0 @@
-export const sexRegex = /^(male|female|other)$/i;

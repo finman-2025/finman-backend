@@ -1,18 +1,24 @@
-import * as argon2 from 'argon2';
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { RegisterDto, TokensDto } from './dto';
-import { PrismaService } from 'src/config/db.config';
-import { UsersService } from '../users/users.service';
+import * as argon2 from 'argon2';
+import { randomBytes } from 'crypto';
 
-import { responseMessage } from 'src/common/text';
+import { PrismaService } from 'src/config/db.config';
+
+import { collectionKey, fieldKey, responseMessage } from 'src/common/text';
+
+import { RegisterDto, TokensDto } from './dto';
+
+import { UsersService } from 'src/modules/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +40,7 @@ export class AuthService {
   async validateUser(username: string, password: string) {
     const user = await this.usersService.findOneByUsername(username);
     if (!user)
-      throw new BadRequestException(responseMessage.wrongUsernameOrPassword);
+      throw new NotFoundException(responseMessage.notFound(fieldKey.username));
 
     const valid = await this.verifyPassword(user.password, password);
     if (!valid)
@@ -45,74 +51,112 @@ export class AuthService {
 
   async validateAccessTokenPayload(payload: any) {
     const user = await this.usersService.findOneById(payload.sub);
+    if (!user)
+      throw new UnauthorizedException(
+        responseMessage.notFound(collectionKey.user),
+      );
     return {
       id: user.id,
       username: user.username,
-      refreshToken: user.refreshToken,
     };
   }
 
-  async getTokens(id: number, username: string) {
-    const payload = { sub: id, username };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
-      }),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES'),
-      }),
-    ]);
+  async getTokens(userId: number): Promise<TokensDto> {
+    const payload = { sub: userId };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES'),
+    });
+
+    let refreshTokenLength: number =
+      this.configService.get<number>('REFRESH_TOKEN_LENGTH') || 64;
+    refreshTokenLength = Number(refreshTokenLength);
+    const refreshToken = randomBytes(refreshTokenLength).toString('hex');
+
+    if (!accessToken || !refreshToken)
+      throw new ServiceUnavailableException(
+        responseMessage.internalServerError,
+      );
 
     return new TokensDto(accessToken, refreshToken);
   }
 
-  async register(dto: RegisterDto) {
-    const userExists = await this.usersService.findOneByUsername(dto.username);
-    if (userExists) throw new BadRequestException('User already exists');
+  async register(data: RegisterDto) {
+    const userExists = await this.usersService.findOneByUsername(data.username);
+    if (userExists)
+      throw new ConflictException(
+        responseMessage.alreadyExists(fieldKey.username),
+      );
 
-    const hash = await this.hashPassword(dto.password);
-    const user = await this.prisma.user.create({
+    const hash = await this.hashPassword(data.password);
+
+    await this.prisma.user.create({
       data: {
-        username: dto.username,
+        username: data.username,
         password: hash,
-        email: dto.email,
-        name: dto.name,
+        email: data.email,
+        name: data.name,
       },
+      omit: { createdAt: true, updatedAt: true, isDeleted: true },
     });
-
-    if (!user) throw new ServiceUnavailableException('Can not create new user');
-
-    return true;
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user.id, user.username);
+    const tokens = await this.getTokens(user['id']);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+    await this.prisma.refreshToken.create({
+      data: {
+        token: tokens.refreshToken,
+        userId: user['id'] as number,
+        expiresAt: new Date(
+          Date.now() +
+            Number(this.configService.get<number>('REFRESH_TOKEN_EXPIRES')) *
+              1000,
+        ),
+      },
     });
 
     return tokens;
   }
 
-  async refreshToken(user: any) {
-    const tokens = await this.getTokens(user.id, user.username);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+  async refreshToken(refreshToken: string) {
+    const tokenData = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
     });
+    if (!tokenData)
+      throw new UnauthorizedException(responseMessage.sectionExpired);
 
-    return tokens;
+    if (tokenData.expiresAt < new Date())
+      throw new UnauthorizedException(responseMessage.sectionExpired);
+
+    const newAccessToken = await this.jwtService.signAsync(
+      { sub: tokenData.userId },
+      { expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES') },
+    );
+
+    return new TokensDto(newAccessToken, refreshToken);
   }
 
-  async logout(user: any) {
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: null },
+  async logout(userId: number) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: userId },
     });
+  }
 
-    return true;
+  async changePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.usersService.findOneById(userId);
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    const valid = await this.verifyPassword(user.password, oldPassword);
+    if (!valid)
+      throw new BadRequestException(responseMessage.passwordDoesNotMatch);
+
+    const hash = await this.hashPassword(newPassword);
+    await this.usersService.updatePassword(user.id, hash);
   }
 }

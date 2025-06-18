@@ -1,0 +1,35 @@
+services:
+  database:
+    image: postgres:alpine
+    container_name: finman-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    image: finman-backend:latest
+    container_name: finman-backend
+    restart: always
+    environment:
+      DB_HOST: database
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: ${DB_PORT}
+    volumes:
+      - ./${GOOGLE_JSON_KEY_PATH}:/app/${GOOGLE_JSON_KEY_PATH}:ro
+      - ./.env:/app/.env:ro
+    ports:
+      - ${$PORT}:${$PORT}
+    depends_on:
+      - database
+
+volumes:
+  database:

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ExpenseType } from '@prisma/client';
 
 export class ICategory {
   @ApiProperty()
@@ -7,18 +8,12 @@ export class ICategory {
   @ApiProperty()
   name: string;
 
+  @ApiPropertyOptional({ enum: ExpenseType })
+  type: ExpenseType;
+
   @ApiPropertyOptional()
   image?: string;
 
   @ApiPropertyOptional()
   limit?: number;
-
-  @ApiProperty()
-  userId: number;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
 }

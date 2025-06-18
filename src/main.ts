@@ -1,3 +1,5 @@
+import './instrument'
+
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -21,7 +23,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api', { exclude: ['/'] });
 
   app.enableCors({
-    origin: '*',
+    origin: appConfig.corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
@@ -39,4 +41,4 @@ async function bootstrap() {
   });
 }
 
-bootstrap();
+void bootstrap();

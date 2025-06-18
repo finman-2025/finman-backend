@@ -1,9 +1,4 @@
-import { PickType } from "@nestjs/swagger";
-import { IExpense } from "./expense.interface";
+import { PartialType } from '@nestjs/swagger';
+import { ICreateExpense } from './create-expense.interface';
 
-export class IUpdateExpense extends PickType(IExpense, [
-    "value",
-    "description",
-    "date",
-    "categoryId",
-]) {}
+export class IUpdateExpense extends PartialType(ICreateExpense) {}

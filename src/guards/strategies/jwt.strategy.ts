@@ -21,20 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request, payload: any) {
-    let user = await this.authService.validateAccessTokenPayload(payload);
+    const user = await this.authService.validateAccessTokenPayload(payload);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (req.url === '/auth/refresh') {
-      const refreshToken = req
-        .get('Authorization')
-        .replace('Bearer', '')
-        .trim();
-      if (refreshToken !== user.refreshToken) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-    }
     return { id: user.id, username: user.username };
   }
 }

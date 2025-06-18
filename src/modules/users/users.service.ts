@@ -1,41 +1,68 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+
 import { PrismaService } from 'src/config/db.config';
+
 import { CreateUserDto, UpdateUserDto } from './dto';
+import { collectionKey, fieldKey, responseMessage } from 'src/common/text';
+
+import { CloudStorageService } from '../cloud-storage/cloud-storage.service';
 import { IReturnUser, IUser } from './interfaces';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly bucketFolderName = 'avatars';
 
-  async findOneByUsernameAndPassword(username: string, password: string) {
+  constructor(
+    private prisma: PrismaService,
+    private cloudStorageService: CloudStorageService,
+  ) {}
+
+  extractProfileData(user: IUser): IReturnUser {
+    if (!user)
+      throw new InternalServerErrorException(
+        responseMessage.internalServerError,
+      );
+
+    return {
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      sex: user.sex,
+      dateOfBirth: user.dateOfBirth,
+    };
+  }
+
+  async findOneByUsername(username: string): Promise<IUser | null> {
     return await this.prisma.user.findUnique({
-      where: { username, password },
+      where: { username, isDeleted: false },
     });
   }
 
-  async findOneByUsername(username: string) {
+  async findOneById(id: number): Promise<IUser | null> {
     return await this.prisma.user.findUnique({
-      where: { username },
+      where: { id: id, isDeleted: false },
     });
   }
 
-  async findOneById(id: number) {
-    return await this.prisma.user.findUnique({
-      where: { id },
-    });
-  }
-
-  async findManyUsersBySearchString(searchString: string) {
+  async findManyUsersBySearchString(
+    searchString: string,
+  ): Promise<IUser[] | null> {
     return await this.prisma.user.findMany({
       where: {
-        username: {
-          contains: searchString,
-        },
+        username: { contains: searchString },
+        isDeleted: false,
       },
     });
   }
 
-  async createOne(data: CreateUserDto) {
+  async createOne(data: CreateUserDto): Promise<IUser | null> {
     return await this.prisma.user.create({
       data: {
         username: data.username,
@@ -46,29 +73,111 @@ export class UsersService {
     });
   }
 
-  async updateOneById(id: number, data: UpdateUserDto) {
+  async updateOneById(id: number, data: UpdateUserDto): Promise<IUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id, isDeleted: false },
+    });
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
     return await this.prisma.user.update({
-      where: { id },
+      where: { id, isDeleted: false },
       data: {
         email: data.email,
         name: data.name,
         phoneNumber: data.phoneNumber,
+        sex: data.sex,
+        dateOfBirth: data.dateOfBirth,
+        address: data.address,
       },
     });
   }
 
-  async deleteOneById(id: number) {
-    return await this.prisma.user.delete({
+  async deleteOneById(id: number): Promise<IUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id, isDeleted: false },
+    });
+    if (!user || user.isDeleted)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    return await this.prisma.user.update({
       where: { id },
+      data: { isDeleted: true },
     });
   }
 
-  getBasicUserInfo(user: IUser): IReturnUser {
-    const {
-      password,
-      username,
-      ... rest
-    } = user;
-    return rest;
+  async updatePassword(id: number, newPassword: string): Promise<IUser | null> {
+    return await this.prisma.user.update({
+      where: { id, isDeleted: false },
+      data: { password: newPassword },
+    });
+  }
+
+  async updateAvatar(
+    userId: number,
+    localFilePath: string,
+    fileName: string,
+    fileType: string,
+  ): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isDeleted: false },
+      select: { avatar: true },
+    });
+
+    if (!user)
+      throw new NotFoundException(responseMessage.notFound(collectionKey.user));
+
+    if (user.avatar) await this.deleteAvatar(userId, user.avatar);
+
+    const cloudFilePath = this.cloudStorageService.getCloudFilePath(
+      this.bucketFolderName,
+      userId,
+      fileName,
+    );
+
+    const publicUrl = await this.cloudStorageService.uploadFile(
+      localFilePath,
+      cloudFilePath,
+      fileType,
+    );
+
+    await this.prisma.user.update({
+      where: { id: userId, isDeleted: false },
+      data: { avatar: publicUrl },
+    });
+    return publicUrl;
+  }
+
+  async deleteAvatar(userId: number, url?: string) {
+    if (!url) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId, isDeleted: false },
+        select: { avatar: true },
+      });
+
+      if (!user)
+        throw new NotFoundException(
+          responseMessage.notFound(collectionKey.user),
+        );
+      if (!user.avatar)
+        throw new NotFoundException(responseMessage.notFound(fieldKey.avatar));
+
+      url = user.avatar;
+    }
+
+    const urlInfo = url.split('/');
+    const fileName = urlInfo[urlInfo.length - 1];
+
+    const cloudFilePath = this.cloudStorageService.getCloudFilePath(
+      this.bucketFolderName,
+      userId,
+      fileName,
+    );
+    await this.cloudStorageService.deleteFile(cloudFilePath);
+
+    await this.prisma.user.update({
+      where: { id: userId, isDeleted: false },
+      data: { avatar: null },
+    });
   }
 }

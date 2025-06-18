@@ -1,5 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { ICategory } from 'src/modules/categories/interfaces';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class IUser {
   @ApiProperty()
@@ -12,32 +11,32 @@ export class IUser {
   password: string;
 
   @ApiProperty()
-  refreshToken: string;
-
-  @ApiProperty()
   name: string;
 
   @ApiProperty()
   email: string;
 
-  @ApiProperty()
-  phoneNumber: string;
+  @ApiPropertyOptional()
+  phoneNumber?: string;
 
-  @ApiProperty()
-  sex: string;
+  @ApiPropertyOptional()
+  sex?: string;
 
-  @ApiProperty()
-  dateOfBirth: Date;
+  @ApiPropertyOptional()
+  dateOfBirth?: Date;
 
-  @ApiProperty()
-  address: string;
+  @ApiPropertyOptional()
+  address?: string;
 
-  @ApiProperty()
-  avatar: string;
+  @ApiPropertyOptional()
+  avatar?: string;
 
   @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty()
+  isDeleted: boolean;
 }

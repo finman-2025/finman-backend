@@ -1,24 +1,25 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
+import { ExpenseType } from '@prisma/client';
 
 export class IExpense {
-    @ApiProperty()
-    id: number;
+  @ApiProperty()
+  id: number;
 
-    @ApiProperty()
-    value: number;
+  @ApiProperty({
+    enum: ExpenseType,
+    description: `type: ${ExpenseType.INCOME} | ${ExpenseType.OUTCOME}`,
+  })
+  type: ExpenseType;
 
-    @ApiProperty()
-    description: string;
+  @ApiProperty()
+  value: number;
 
-    @ApiProperty()
-    date: Date;
+  @ApiProperty()
+  description: string;
 
-    @ApiProperty()
-    categoryId: number;
+  @ApiProperty()
+  date: Date;
 
-    @ApiProperty()
-    createdAt: Date;
-
-    @ApiProperty()
-    updatedAt: Date;
+  @ApiProperty()
+  categoryId: number;
 }

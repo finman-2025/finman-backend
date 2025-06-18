@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
-import { messages, fieldKey } from 'src/common/text';
+import { ExpenseType } from '@prisma/client';
 
+import { messages, fieldKey, collectionKey } from 'src/common/text';
 import { nameRegex, uppercaseFirstLetter } from 'src/common/utils';
 
 export const createCategorySchema = z.object({
@@ -11,9 +12,22 @@ export const createCategorySchema = z.object({
     .regex(nameRegex, { message: messages.invalid(fieldKey.categoryName) })
     .transform((value) => uppercaseFirstLetter(value.trim())),
   limit: z
-    .number()
-    .int(messages.invalid(fieldKey.limit))
-    .positive(messages.invalid(fieldKey.limit))
+    .string()
+    .transform((value) => (value ? Number(value.trim()) : undefined))
+    .refine((value) => value === undefined || !isNaN(value) || value > 0, {
+      message: messages.invalid(fieldKey.limit),
+    })
+    .optional(),
+  type: z.preprocess(
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    (value) => value?.toString()?.toUpperCase(),
+    z.nativeEnum(ExpenseType, {
+      message: messages.invalid(fieldKey.expenseType, collectionKey.category),
+    }),
+  ),
+  image: z
+    .string()
+    .transform((value) => (value ? value.trim() : undefined))
     .optional(),
 });
 

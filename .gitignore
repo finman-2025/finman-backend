@@ -35,6 +35,15 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# multer uploads
+/uploads
+
+# keys
+/certs
+
+# generated files
+/src/generated
+
 # dotenv environment variable files
 .env
 .env.development.local
